@@ -1,0 +1,7 @@
+{
+  "name": "post-tool-use",
+  "description": "Runs formatters and linters after code is written to maintain code quality",
+  "when": "PostToolUse",
+  "tools": ["write_to_file", "replace_in_file"],
+  "script": "post-tool-use.sh"
+}

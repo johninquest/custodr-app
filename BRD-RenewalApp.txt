@@ -1,0 +1,368 @@
+# Document 1: High-Level Business Requirement  
+## Product Concept: Digital Renewal & Commitment Management Platform
+
+## 1. Background
+
+Consumers in Germany and Europe manage many recurring commitments across different life areas, including insurance, subscriptions, utilities, telecom contracts, banking products, memberships, vehicle-related obligations, and health-related reminders.
+
+These commitments often have:
+
+- Renewal dates
+- Cancellation deadlines
+- Payment cycles
+- Contract end dates
+- Provider-specific notice periods
+- Regulatory or contractual obligations
+
+Today, these obligations are usually scattered across emails, customer portals, PDFs, apps, calendar entries, and personal memory. This creates friction and increases the risk of missed cancellation deadlines, unwanted renewals, and poor financial visibility.
+
+The proposed product is a digital platform that helps users centrally manage recurring commitments and renewal-related obligations without relying on document storage or manual file management.
+
+## 2. Product Vision
+
+The product should become a personal digital assistant for managing recurring commitments and renewal obligations.
+
+The core value proposition is:
+
+> “Know what renews, what expires, what needs action, and when.”
+
+The product should help users answer questions such as:
+
+- Which contracts or commitments are renewing soon?
+- Which cancellation deadlines are approaching?
+- Which subscriptions or memberships am I still paying for?
+- Which insurance policies need review?
+- Which obligations require action in the next 30, 60, or 90 days?
+- Where can I reduce unnecessary recurring costs?
+
+## 3. Target Users
+
+### Primary Target Group
+
+Private consumers in Germany and the EU who manage multiple recurring services and contracts.
+
+Examples:
+
+- Young professionals
+- Families
+- Digitally aware consumers
+- People with multiple insurance contracts
+- People with several subscriptions
+- Users who want better control over recurring expenses and deadlines
+
+### Secondary Target Group
+
+Potential future B2B or B2B2C use cases:
+
+- Insurance brokers
+- Financial advisors
+- Consumer finance platforms
+- Employer benefit platforms
+- Banks or insurers offering value-added digital services
+
+## 4. Core Problem Statement
+
+Users often lose track of important dates and obligations related to their recurring commitments.
+
+This leads to:
+
+- Missed cancellation deadlines
+- Unwanted renewals
+- Duplicate or unnecessary subscriptions
+- Lack of transparency over monthly recurring costs
+- Poor timing when switching providers
+- Missed opportunities to review insurance or utility contracts
+
+## 5. Business Objectives
+
+The platform should:
+
+1. Help users manage all recurring commitments in one place.
+2. Provide timely reminders before renewal, expiry, or cancellation deadlines.
+3. Reduce the cognitive load of tracking contracts manually.
+4. Avoid document-heavy workflows during the MVP phase.
+5. Validate whether users are willing to enter and maintain structured commitment data.
+6. Establish a technical foundation that can later support integrations with open standards such as BiPRO, Open Banking, Open Finance, FiDA, and other data exchange frameworks.
+7. Build trust through privacy-conscious and GDPR-aware design from the beginning.
+
+## 6. Scope of the MVP
+
+The MVP should focus on structured manual entry and reminder generation.
+
+### In Scope
+
+The MVP should allow users to:
+
+- Register and log in securely.
+- Create and manage recurring commitments.
+- Categorize commitments.
+- Define renewal dates.
+- Define cancellation deadlines.
+- Define cost and billing frequency.
+- Receive email reminders.
+- View upcoming deadlines.
+- View commitments by category.
+- Edit or deactivate commitments.
+- See a simple dashboard of upcoming actions.
+
+### Example Commitment Categories
+
+- Insurance
+- Streaming subscription
+- Software subscription
+- Mobile contract
+- Internet contract
+- Electricity contract
+- Gas contract
+- Gym membership
+- Banking product
+- Vehicle-related obligation
+- Healthcare reminder
+- Vaccination reminder
+- Other recurring obligation
+
+## 7. Out of Scope for MVP
+
+The following should not be included in the first version:
+
+- Document upload
+- PDF storage
+- OCR
+- Contract document parsing
+- In-app document management
+- Complex AI automation
+- Bank account aggregation
+- Full BiPRO integration
+- Full FiDA/Open Finance integration
+- Native mobile apps
+- Marketplace or switching functionality
+- Broker or enterprise portals
+
+## 8. Core Functional Requirements
+
+### 8.1 User Authentication
+
+The system shall support user registration and login through an outsourced authentication provider.
+
+Initial authentication options may include:
+
+- Email/password
+- Google login
+- Apple login
+- Microsoft login
+
+The application should not implement password storage directly.
+
+### 8.2 Commitment Management
+
+The system shall allow users to create commitments with the following minimum fields:
+
+- Commitment name
+- Category
+- Provider
+- Start date
+- Renewal date
+- Cancellation deadline
+- Cost
+- Billing frequency
+- Status
+- Notes
+
+Potential statuses:
+
+- Active
+- Cancelled
+- Expired
+- Paused
+- Review Needed
+
+### 8.3 Reminder Management
+
+The system shall generate reminders based on renewal and cancellation dates.
+
+Example reminder windows:
+
+- 90 days before deadline
+- 60 days before deadline
+- 30 days before deadline
+- 14 days before deadline
+- 7 days before deadline
+- 1 day before deadline
+
+Users should be able to configure reminder preferences later, but the MVP can start with default reminder intervals.
+
+### 8.4 Notification Delivery
+
+The MVP shall support email notifications.
+
+Email notifications should be used for:
+
+- Upcoming renewal reminders
+- Upcoming cancellation deadline reminders
+- Welcome email
+- Important account-related messages
+
+Authentication-related emails may initially be handled by the authentication provider.
+
+### 8.5 Dashboard
+
+The dashboard shall show:
+
+- Upcoming deadlines
+- Commitments requiring action
+- Monthly recurring cost overview
+- Commitments grouped by category
+- Recently added commitments
+
+### 8.6 Data Model Philosophy
+
+The MVP should avoid creating separate tables and workflows for every possible product type.
+
+Instead, the system should use a generic commitment model that can support different categories.
+
+The general domain concept should be:
+
+> A commitment is any recurring obligation, service, contract, product, or reminder that has a cost, date, renewal cycle, expiry date, or action deadline.
+
+## 9. Non-Functional Requirements
+
+### 9.1 Privacy and GDPR
+
+The system should be designed with GDPR principles from the beginning.
+
+Key principles:
+
+- Data minimization
+- Purpose limitation
+- Secure processing
+- Clear consent where required
+- Ability to delete user data
+- Clear privacy policy
+- Use of processors with Data Processing Agreements
+- Preference for EU-based infrastructure where practical
+
+### 9.2 Security
+
+The system should:
+
+- Outsource authentication to a dedicated identity provider.
+- Validate identity tokens on the backend.
+- Protect all user-specific API endpoints.
+- Ensure users can only access their own data.
+- Avoid storing sensitive documents in the MVP.
+- Use HTTPS only.
+- Store secrets securely.
+- Apply proper database access controls.
+
+### 9.3 Scalability
+
+The MVP does not need hyperscale architecture.
+
+The initial goal is to support validation with a small user base.
+
+The architecture should, however, be able to evolve toward:
+
+- More users
+- More reminder events
+- More integrations
+- More structured data sources
+- Open standards-based data exchange
+
+### 9.4 Maintainability
+
+The backend should be structured in a way that remains understandable as the product grows.
+
+A modular monolith is preferred over microservices for the MVP.
+
+### 9.5 Portability
+
+The application should be deployable on a VPS.
+
+The architecture should avoid unnecessary lock-in where possible, while still allowing pragmatic use of managed services for authentication and email delivery.
+
+## 10. Future Capabilities
+
+After validation, the platform may evolve toward:
+
+- Open Banking integrations
+- Open Finance integrations
+- FiDA-related data access models
+- BiPRO-based insurance data exchange
+- Provider connectors
+- Contract switching recommendations
+- AI-assisted classification
+- Automatic renewal detection from email metadata
+- Partner integrations
+- Broker/agent dashboard
+- Mobile app
+- Push notifications
+
+## 11. Key Business Risks
+
+### 11.1 User Input Friction
+
+The biggest MVP risk is that users may not want to manually enter all their commitments.
+
+Mitigation:
+
+- Keep entry forms short.
+- Use category-specific templates.
+- Ask only for the minimum required data.
+- Allow users to add a commitment in under one minute.
+
+### 11.2 Monetization Uncertainty
+
+It is unclear whether consumers will pay directly for reminder and commitment management.
+
+Potential monetization models:
+
+- Freemium
+- Premium reminders and analytics
+- Partner offers
+- B2B2C distribution
+- Broker/financial advisor tools
+- Switching commissions, if legally and ethically appropriate
+
+### 11.3 Trust Barrier
+
+Users may be cautious about entering financial and contract-related data.
+
+Mitigation:
+
+- Avoid document upload in MVP.
+- Be transparent about data usage.
+- Use GDPR-compliant providers.
+- Clearly communicate that the user controls their data.
+
+## 12. MVP Success Criteria
+
+The MVP should validate whether users:
+
+- Understand the value proposition quickly.
+- Are willing to register.
+- Are willing to manually add commitments.
+- Return to the app after initial setup.
+- Act on reminders.
+- Find the dashboard useful.
+- Express willingness to pay or recommend the product.
+
+Potential MVP metrics:
+
+- Number of registered users
+- Number of commitments created per user
+- Completion rate of commitment creation flow
+- Reminder open rate
+- Reminder click-through rate
+- Returning users after 7/30 days
+- Number of users adding more than 5 commitments
+- Qualitative user feedback
+
+## 13. Summary
+
+The initial product should be a lightweight, privacy-conscious, structured commitment and renewal management platform.
+
+The MVP should avoid complex integrations and document management. Instead, it should focus on validating the central user problem:
+
+> Do consumers want a simple, reliable way to track renewals, deadlines, and recurring commitments across different life areas?
+
+If validated, the platform can later evolve into a broader European personal data, contract, insurance, and open finance platform.

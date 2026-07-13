@@ -1,0 +1,6 @@
+{
+  "name": "stop",
+  "description": "Runs final validation checks before completing a task to ensure code quality and contract compliance",
+  "when": "Stop",
+  "script": "stop.sh"
+}

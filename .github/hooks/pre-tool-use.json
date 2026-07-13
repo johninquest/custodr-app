@@ -1,0 +1,7 @@
+{
+  "name": "pre-tool-use",
+  "description": "Validates code before it's written to prevent common mistakes and enforce project conventions",
+  "when": "PreToolUse",
+  "tools": ["write_to_file", "replace_in_file"],
+  "script": "pre-tool-use.sh"
+}
