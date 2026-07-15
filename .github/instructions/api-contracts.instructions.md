@@ -10,7 +10,7 @@ applyTo: "**/handlers/**/*.go,**/services/**/*.go,**/repositories/**/*.go,**/mod
 Before implementing any API endpoint or database operation, cross-reference these contract files:
 
 - **API Contract**: [api_spec.md](../../api_spec.md) — Endpoints, request/response formats, validation rules, error codes
-- **Database Schema**: [schema.md](../../schema.md) — Tables, columns, constraints, indexes, relationships
+- **Database Schema**: [schema.md](../../schema.md) — SQLite tables, columns, constraints, indexes, relationships
 
 ## Implementation Rules
 
@@ -51,7 +51,7 @@ Before implementing any API endpoint or database operation, cross-reference thes
 1. **Schema Compliance**: Match schema.md table definitions exactly
    - Use correct column names and data types
    - Respect constraints (NOT NULL, CHECK, UNIQUE)
-   - Use UUID primary keys with `gen_random_uuid()`
+   - Use `TEXT` primary keys storing UUIDs generated in the application layer
 
 2. **Soft Deletes**: Use `deleted_at` timestamp for soft deletes
    - Always filter queries with `WHERE deleted_at IS NULL`
@@ -60,7 +60,7 @@ Before implementing any API endpoint or database operation, cross-reference thes
 
 3. **Audit Timestamps**: Maintain `created_at` and `updated_at`
    - Set `created_at` on INSERT (never update)
-   - Update `updated_at` on every UPDATE (use trigger)
+   - Update `updated_at` on every UPDATE in application code (SQLite has no PL/pgSQL triggers)
 
 4. **Indexes**: Use indexed columns for query performance
    - Filter by `user_id` for all user-scoped queries
@@ -85,18 +85,18 @@ Before implementing any API endpoint or database operation, cross-reference thes
    ```
 
 2. **Date/Time Types**: Use correct Go types
-   - `time.Time` for timestamps (TIMESTAMPTZ)
-   - `time.Time` or custom type for dates (DATE)
+   - `time.Time` for timestamps, stored as `TEXT` ISO 8601 UTC in SQLite
+   - `string` for dates (YYYY-MM-DD)
    - Format as ISO 8601 in JSON responses
 
-3. **Decimal Types**: Use `decimal.Decimal` for monetary amounts
+4. **Money Types**: Store monetary amounts as integer cents in SQLite
    - Avoid floating-point precision issues
-   - Format with 2 decimal places in JSON
+   - Format with 2 decimal places in JSON for display
 
-4. **Enum Types**: Define Go constants for database enums
+5. **Enum Types**: Define Go constants for database enums. SQLite stores enums as `TEXT` with `CHECK` constraints.
    ```go
    type CommitmentStatus string
-   
+
    const (
      StatusActive       CommitmentStatus = "active"
      StatusCancelled    CommitmentStatus = "cancelled"
@@ -128,7 +128,7 @@ Before completing implementation, verify:
 5. **Missing validation**: Validate all input fields, not just required ones
 6. **Inconsistent error format**: Always use standard error response structure
 7. **Pagination errors**: Calculate `total_pages` correctly: `ceil(total / limit)`
-8. **Timezone issues**: Store timestamps in UTC, convert to user timezone in application layer
+8. **Timezone issues**: Store timestamps as `TEXT` ISO 8601 UTC in SQLite, convert to user timezone in application layer
 
 ## Testing Requirements
 

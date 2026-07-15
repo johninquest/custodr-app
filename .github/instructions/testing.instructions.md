@@ -63,7 +63,7 @@ func TestCommitmentService_Create(t *testing.T) {
             input: CreateCommitmentRequest{
                 Name:     "Netflix",
                 Category: "streaming_subscription",
-                Cost:     decimal.NewFromFloat(15.99),
+                Cost:     1599,
             },
             mockSetup: func(m *MockRepository) {
                 m.On("Create", mock.Anything, mock.Anything).Return(nil)
@@ -75,7 +75,7 @@ func TestCommitmentService_Create(t *testing.T) {
             name: "invalid cost - negative",
             input: CreateCommitmentRequest{
                 Name: "Netflix",
-                Cost: decimal.NewFromFloat(-10),
+                Cost: -10,
             },
             mockSetup:   func(m *MockRepository) {},
             expectError: true,
@@ -87,7 +87,7 @@ func TestCommitmentService_Create(t *testing.T) {
                 Name:        "Netflix",
                 StartDate:   time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
                 RenewalDate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-                Cost:        decimal.NewFromFloat(15.99),
+                Cost:        1599,
             },
             mockSetup:   func(m *MockRepository) {},
             expectError: true,
@@ -103,7 +103,7 @@ func TestCommitmentService_Create(t *testing.T) {
             service := NewCommitmentService(mockRepo)
 
             // Act
-            result, err := service.Create(context.Background(), uuid.New(), tt.input)
+            result, err := service.Create(context.Background(), uuid.New().String(), tt.input)
 
             // Assert
             if tt.expectError {
@@ -128,15 +128,15 @@ Test business logic with mocked repositories:
 func TestCommitmentService_List(t *testing.T) {
     t.Run("returns commitments for user", func(t *testing.T) {
         // Arrange
-        userID := uuid.New()
+        userID := uuid.New().String()
         mockRepo := new(MockRepository)
         service := NewCommitmentService(mockRepo)
-        
+
         expectedCommitments := []Commitment{
-            {ID: uuid.New(), Name: "Netflix", UserID: userID},
-            {ID: uuid.New(), Name: "Spotify", UserID: userID},
+            {ID: uuid.New().String(), Name: "Netflix", UserID: userID},
+            {ID: uuid.New().String(), Name: "Spotify", UserID: userID},
         }
-        
+
         mockRepo.On("ListByUserID", mock.Anything, userID, mock.Anything).
             Return(expectedCommitments, nil)
         mockRepo.On("CountByUserID", mock.Anything, userID, mock.Anything).
@@ -154,10 +154,10 @@ func TestCommitmentService_List(t *testing.T) {
 
     t.Run("returns error when repository fails", func(t *testing.T) {
         // Arrange
-        userID := uuid.New()
+        userID := uuid.New().String()
         mockRepo := new(MockRepository)
         service := NewCommitmentService(mockRepo)
-        
+
         mockRepo.On("ListByUserID", mock.Anything, userID, mock.Anything).
             Return(nil, errors.New("database error"))
 
@@ -187,25 +187,25 @@ func TestCommitmentRepository_Create(t *testing.T) {
     
     t.Run("creates commitment successfully", func(t *testing.T) {
         commitment := &Commitment{
-            ID:               uuid.New(),
-            UserID:           uuid.New(),
+            ID:               uuid.New().String(),
+            UserID:           uuid.New().String(),
             Name:             "Netflix",
             Category:         "streaming_subscription",
             Provider:         "Netflix",
             StartDate:        time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
             RenewalDate:      time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
-            Cost:             decimal.NewFromFloat(15.99),
+            Cost:             1599,
             Currency:         "EUR",
             BillingFrequency: "monthly",
             Status:           "active",
         }
-        
+
         // Act
         err := repo.Create(context.Background(), commitment)
-        
+
         // Assert
         assert.NoError(t, err)
-        
+
         // Verify in database
         retrieved, err := repo.GetByID(context.Background(), commitment.ID)
         assert.NoError(t, err)
@@ -215,11 +215,11 @@ func TestCommitmentRepository_Create(t *testing.T) {
 
     t.Run("fails with duplicate ID", func(t *testing.T) {
         commitment := &Commitment{
-            ID:       uuid.New(),
-            UserID:   uuid.New(),
+            ID:       uuid.New().String(),
+            UserID:   uuid.New().String(),
             Name:     "Netflix",
             Category: "streaming_subscription",
-            Cost:     decimal.NewFromFloat(15.99),
+            Cost:     1599,
         }
         
         // Create first time
@@ -240,11 +240,11 @@ func TestCommitmentRepository_SoftDelete(t *testing.T) {
     
     // Create commitment
     commitment := &Commitment{
-        ID:       uuid.New(),
-        UserID:   uuid.New(),
+        ID:       uuid.New().String(),
+        UserID:   uuid.New().String(),
         Name:     "Netflix",
         Category: "streaming_subscription",
-        Cost:     decimal.NewFromFloat(15.99),
+        Cost:     1599,
     }
     err := repo.Create(context.Background(), commitment)
     assert.NoError(t, err)
@@ -272,11 +272,11 @@ func TestCommitmentHandler_Create(t *testing.T) {
         mockService := new(MockCommitmentService)
         handler := NewCommitmentHandler(mockService)
         
-        userID := uuid.New()
+        userID := uuid.New().String()
         expectedCommitment := &Commitment{
-            ID:   uuid.New(),
+            ID:   uuid.New().String(),
             Name: "Netflix",
-            Cost: decimal.NewFromFloat(15.99),
+            Cost: 1599,
         }
         
         mockService.On("Create", mock.Anything, userID, mock.Anything).
@@ -312,7 +312,7 @@ func TestCommitmentHandler_Create(t *testing.T) {
         err := json.Unmarshal(w.Body.Bytes(), &response)
         assert.NoError(t, err)
         assert.Equal(t, "Netflix", response.Name)
-        assert.Equal(t, decimal.NewFromFloat(15.99), response.Cost)
+assert.Equal(t, int64(1599), response.Cost)
         
         mockService.AssertExpectations(t)
     })
@@ -341,7 +341,7 @@ func TestCommitmentHandler_Create(t *testing.T) {
         mockService := new(MockCommitmentService)
         handler := NewCommitmentHandler(mockService)
         
-        userID := uuid.New()
+        userID := uuid.New().String()
         mockService.On("Create", mock.Anything, userID, mock.Anything).
             Return(nil, &ValidationError{Field: "cost", Message: "cost must be positive"})
         
@@ -386,43 +386,46 @@ import (
     "database/sql"
     "testing"
     "github.com/jmoiron/sqlx"
-    _ "github.com/lib/pq"
+    _ "github.com/mutecomm/go-sqlcipher"
 )
 
 func SetupTestDB(t *testing.T) *sqlx.DB {
     t.Helper()
-    
-    // Use test database
-    dsn := "postgres://user:pass@localhost:5432/commitmgr_test?sslmode=disable"
-    db, err := sqlx.Connect("postgres", dsn)
+
+    // Use an in-memory SQLite database for tests
+    dsn := ":memory:?_pragma_key=test-key"
+    db, err := sqlx.Connect("sqlite3", dsn)
     if err != nil {
         t.Fatalf("failed to connect to test database: %v", err)
     }
-    
+
+    // Enable foreign keys
+    if _, err := db.Exec("PRAGMA foreign_keys = ON;"); err != nil {
+        t.Fatalf("failed to enable foreign keys: %v", err)
+    }
+
     // Run migrations
     runMigrations(t, db)
-    
+
     return db
 }
 
 func CleanupTestDB(db *sqlx.DB) {
-    // Truncate all tables
-    db.Exec("TRUNCATE TABLE commitments, reminders, users CASCADE")
     db.Close()
 }
 
 func runMigrations(t *testing.T, db *sqlx.DB) {
     t.Helper()
-    
+
     // Apply migrations
     m, err := migrate.New(
         "file://migrations",
-        "postgres://user:pass@localhost:5432/commitmgr_test?sslmode=disable",
+        "sqlite3://:memory:?_pragma_key=test-key",
     )
     if err != nil {
         t.Fatalf("failed to create migrator: %v", err)
     }
-    
+
     if err := m.Up(); err != nil && err != migrate.ErrNoChange {
         t.Fatalf("failed to run migrations: %v", err)
     }
@@ -445,7 +448,7 @@ func (m *MockRepository) Create(ctx context.Context, commitment *Commitment) err
     return args.Error(0)
 }
 
-func (m *MockRepository) GetByID(ctx context.Context, id uuid.UUID) (*Commitment, error) {
+func (m *MockRepository) GetByID(ctx context.Context, id string) (*Commitment, error) {
     args := m.Called(ctx, id)
     if args.Get(0) == nil {
         return nil, args.Error(1)
@@ -871,7 +874,7 @@ tests := []struct {
 - **Testing implementation details**: Test behavior, not internal state
 - **Flaky tests**: Avoid time-dependent tests, use fixed timestamps
 - **Slow tests**: Mock external dependencies, use test database
-- **Missing cleanup**: Always clean up test data with `defer cleanupTestDB(db)`
+- **Missing cleanup**: Always close in-memory test DB with `defer cleanupTestDB(db)`
 
 ### React Frontend
 

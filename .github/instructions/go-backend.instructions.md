@@ -60,7 +60,7 @@ internal/
 Follow this strict layering:
 
 ```
-HTTP Request → Handler → Service → Repository → Database
+HTTP Request → Handler → Service → Repository → SQLite
 ```
 
 **Handler Layer:**
@@ -119,7 +119,7 @@ HTTP Request → Handler → Service → Repository → Database
 ```go
 // internal/shared/auth/provider.go
 type AuthProvider interface {
-    ValidateToken(ctx context.Context, token string) (uuid.UUID, error)
+    ValidateToken(ctx context.Context, token string) (string, error)
 }
 
 // internal/shared/email/provider.go
@@ -131,10 +131,10 @@ type EmailProvider interface {
 // internal/commitments/repository.go
 type Repository interface {
     Create(ctx context.Context, commitment *Commitment) error
-    GetByID(ctx context.Context, id uuid.UUID) (*Commitment, error)
-    ListByUserID(ctx context.Context, userID uuid.UUID, params ListParams) ([]Commitment, error)
+    GetByID(ctx context.Context, id string) (*Commitment, error)
+    ListByUserID(ctx context.Context, userID string, params ListParams) ([]Commitment, error)
     Update(ctx context.Context, commitment *Commitment) error
-    Delete(ctx context.Context, id uuid.UUID) error
+    Delete(ctx context.Context, id string) error
 }
 ```
 
@@ -182,8 +182,8 @@ func (h *Handler) Create(c echo.Context) error {
     }
 
     // Extract user ID from context (set by auth middleware)
-    userID := c.Get("user_id").(uuid.UUID)
-    
+    userID := c.Get("user_id").(string)
+
     commitment, err := h.service.Create(c.Request().Context(), userID, req)
     if err != nil {
         return handleError(c, err)
@@ -203,28 +203,28 @@ type CreateCommitmentRequest struct {
     StartDate            time.Time       `json:"start_date" validate:"required"`
     RenewalDate          time.Time       `json:"renewal_date" validate:"required,gtfield=StartDate"`
     CancellationDeadline *time.Time      `json:"cancellation_deadline"`
-    Cost                 decimal.Decimal `json:"cost" validate:"required,gt=0"`
+    Cost                 int64           `json:"cost" validate:"required,gt=0"` // integer cents
     Currency             string          `json:"currency" validate:"required,len=3"`
-    BillingFrequency     string          `json:"billing_frequency" validate:"required,oneof=monthly quarterly annual"`
+    BillingFrequency     string          `json:"billing_frequency" validate:"required,oneof=monthly quarterly semi_annual annual"`
     Notes                string          `json:"notes" validate:"max=1000"`
 }
 
 type Commitment struct {
-    ID                   uuid.UUID       `json:"id" db:"id"`
-    UserID               uuid.UUID       `json:"user_id" db:"user_id"`
-    Name                 string          `json:"name" db:"name"`
-    Category             string          `json:"category" db:"category"`
-    Provider             string          `json:"provider" db:"provider"`
-    StartDate            time.Time       `json:"start_date" db:"start_date"`
-    RenewalDate          time.Time       `json:"renewal_date" db:"renewal_date"`
-    CancellationDeadline *time.Time      `json:"cancellation_deadline" db:"cancellation_deadline"`
-    Cost                 decimal.Decimal `json:"cost" db:"cost"`
-    Currency             string          `json:"currency" db:"currency"`
-    BillingFrequency     string          `json:"billing_frequency" db:"billing_frequency"`
-    Status               string          `json:"status" db:"status"`
-    Notes                string          `json:"notes" db:"notes"`
-    CreatedAt            time.Time       `json:"created_at" db:"created_at"`
-    UpdatedAt            time.Time       `json:"updated_at" db:"updated_at"`
+    ID                   string     `json:"id" db:"id"`
+    UserID               string     `json:"user_id" db:"user_id"`
+    Name                 string     `json:"name" db:"name"`
+    Category             string     `json:"category" db:"category"`
+    Provider             string     `json:"provider" db:"provider"`
+    StartDate            string     `json:"start_date" db:"start_date"` // YYYY-MM-DD
+    RenewalDate          string     `json:"renewal_date" db:"renewal_date"` // YYYY-MM-DD
+    CancellationDeadline *string    `json:"cancellation_deadline" db:"cancellation_deadline"`
+    Cost                 int64      `json:"cost" db:"cost"` // integer cents
+    Currency             string     `json:"currency" db:"currency"`
+    BillingFrequency     string     `json:"billing_frequency" db:"billing_frequency"`
+    Status               string     `json:"status" db:"status"`
+    Notes                string     `json:"notes" db:"notes"`
+    CreatedAt            time.Time  `json:"created_at" db:"created_at"`
+    UpdatedAt            time.Time  `json:"updated_at" db:"updated_at"`
 }
 ```
 
@@ -301,7 +301,7 @@ func (r *repository) Create(ctx context.Context, commitment *Commitment) error {
             id, user_id, name, category, provider, start_date, renewal_date,
             cancellation_deadline, cost, currency, billing_frequency, status, notes
         ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
     `
 
@@ -328,33 +328,30 @@ func (r *repository) Create(ctx context.Context, commitment *Commitment) error {
     return nil
 }
 
-func (r *repository) ListByUserID(ctx context.Context, userID uuid.UUID, params ListParams) ([]Commitment, error) {
+func (r *repository) ListByUserID(ctx context.Context, userID string, params ListParams) ([]Commitment, error) {
     query := `
         SELECT id, user_id, name, category, provider, start_date, renewal_date,
                cancellation_deadline, cost, currency, billing_frequency, status, notes,
                created_at, updated_at
         FROM commitments
-        WHERE user_id = $1 AND deleted_at IS NULL
+        WHERE user_id = ? AND deleted_at IS NULL
     `
 
     args := []interface{}{userID}
-    argIndex := 2
 
     // Dynamic filtering
     if params.Status != "" {
-        query += fmt.Sprintf(" AND status = $%d", argIndex)
+        query += " AND status = ?"
         args = append(args, params.Status)
-        argIndex++
     }
 
     if params.Category != "" {
-        query += fmt.Sprintf(" AND category = $%d", argIndex)
+        query += " AND category = ?"
         args = append(args, params.Category)
-        argIndex++
     }
 
     // Pagination
-    query += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d OFFSET $%d", argIndex, argIndex+1)
+    query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
     args = append(args, params.Limit, (params.Page-1)*params.Limit)
 
     var commitments []Commitment
@@ -372,9 +369,9 @@ func (r *repository) ListByUserID(ctx context.Context, userID uuid.UUID, params 
 Always filter by `deleted_at IS NULL`:
 
 ```go
-func (r *repository) Delete(ctx context.Context, id uuid.UUID) error {
-    query := `UPDATE commitments SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL`
-    
+func (r *repository) Delete(ctx context.Context, id string) error {
+    query := `UPDATE commitments SET deleted_at = datetime('now') WHERE id = ? AND deleted_at IS NULL`
+
     result, err := r.db.ExecContext(ctx, query, id)
     if err != nil {
         return fmt.Errorf("failed to delete commitment: %w", err)
@@ -428,14 +425,14 @@ import "github.com/rs/zerolog/log"
 
 // Info level for normal operations
 log.Info().
-    Str("user_id", userID.String()).
+    Str("user_id", userID).
     Int("commitment_count", len(commitments)).
     Msg("Listed commitments")
 
 // Error level for failures
 log.Error().
     Err(err).
-    Str("commitment_id", id.String()).
+    Str("commitment_id", id).
     Msg("Failed to create commitment")
 
 // Debug level for detailed debugging
@@ -595,7 +592,7 @@ func TestCommitmentService_Create(t *testing.T) {
             name: "valid commitment",
             input: CreateCommitmentRequest{
                 Name: "Netflix",
-                Cost: decimal.NewFromFloat(15.99),
+                Cost: 1599,
             },
             mockSetup: func(m *MockRepository) {
                 m.On("Create", mock.Anything).Return(nil)
@@ -613,7 +610,7 @@ func TestCommitmentService_Create(t *testing.T) {
             service := NewService(mockRepo)
 
             // Act
-            result, err := service.Create(context.Background(), uuid.New(), tt.input)
+            result, err := service.Create(context.Background(), uuid.New().String(), tt.input)
 
             // Assert
             if tt.expectError {
@@ -649,7 +646,7 @@ func TestCommitmentService_Create(t *testing.T) {
 
 ```go
 // GOOD - parameterized query
-query := "SELECT * FROM commitments WHERE user_id = $1"
+query := "SELECT * FROM commitments WHERE user_id = ?"
 db.QueryContext(ctx, query, userID)
 
 // BAD - string concatenation (SQL injection vulnerability)
@@ -672,6 +669,8 @@ query := "SELECT * FROM commitments WHERE user_id = " + userID
 - Forgetting `WHERE deleted_at IS NULL` in queries
 - Not filtering by user_id (security vulnerability)
 - String concatenation in SQL queries (SQL injection)
+- Forgetting `PRAGMA foreign_keys = ON;`
+- Storing the SQLCipher key in code or version control
 
 ## Build and Verification
 
