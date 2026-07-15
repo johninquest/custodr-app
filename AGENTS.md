@@ -17,8 +17,8 @@ Target: German/EU consumers. MVP phase — validating whether users will enter a
 |-------|--------|--------|
 | Frontend | React + TypeScript + Tailwind CSS | Decided |
 | UI Components | shadcn/ui (optional accelerator) | Decided |
-| Backend | Go (Echo/Gin/Chi) **or** NestJS + TypeScript | **Still open** |
-| Database | PostgreSQL | Decided |
+| Backend | Go (Echo) | Decided |
+| Database | SQLite (SQLCipher for encryption at rest) | Decided |
 | Authentication | Firebase Auth (behind internal interface) | Leaning |
 | Email | Mailjet / Postmark | Leaning |
 | Hosting | Hetzner VPS (EU-based) | Decided |
@@ -46,7 +46,7 @@ internal/
 
 ### Request Flow
 
-`HTTP Request → Handler → Service → Repository → PostgreSQL`
+`HTTP Request → Handler → Service → Repository → SQLite`
 
 ### Key Abstractions
 
@@ -75,12 +75,13 @@ A commitment is any recurring obligation with a cost, date, renewal cycle, expir
 Docker Compose Stack
 ├── traefik     (reverse proxy, TLS termination)
 ├── frontend    (React static build)
-├── api         (backend API)
-├── worker      (background jobs / reminder scheduler — same codebase, different role)
-└── postgres    (database)
+├── api         (backend API + SQLite database file on a mounted volume)
+└── worker      (background jobs / reminder scheduler — same codebase, different role)
 ```
 
 Routing: `app.example.com` (frontend), `api.example.com` (API).
+
+SQLite is a file on disk, not a separate service. The database file lives on a mounted Docker volume and is shared between `api` and `worker` (SQLite supports concurrent readers + a single writer, which fits MVP load).
 
 ## MVP Scope Boundaries
 
@@ -94,85 +95,74 @@ Routing: `app.example.com` (frontend), `api.example.com` (API).
 2. **No overengineering** — no microservices, CQRS, event sourcing, or Kubernetes during MVP
 3. **No document storage** — structured data only for MVP
 4. **Email deliverability is business-critical** — reminders must be delivered reliably; self-hosted email is ruled out
-5. **PostgreSQL backups from day one** — daily dumps, encrypted storage, restore testing
+5. **SQLite backups from day one** — daily encrypted copies of the database file (SQLCipher already encrypts at rest), stored off-host, with periodic restore testing
 6. **REST + JSON API** with OpenAPI documentation from early on
 
 ## Agentic Engineering Workflow
 
-This project includes a comprehensive agentic engineering setup to help AI coding agents be productive from day one. The setup includes contract files, custom agents, prompt workflows, skills, hooks, and file-specific instructions.
+This project uses a lightweight agentic engineering setup: a fixed process loop, two contracts as the spine, a small set of agents and prompts, and a single `stop` hook that keeps the agent honest. The full always-on process rules live in [`.github/copilot-instructions.md`](.github/copilot-instructions.md); this document is the human-readable reference.
 
-### Contract Files (Foundation)
+### Contracts (the spine)
 
 Before writing any code, consult these contract documents:
 
-- **[api_spec.md](api_spec.md)** — Complete API contract with endpoints, request/response schemas, validation rules, error formats, and pagination conventions
-- **[schema.md](schema.md)** — Database schema blueprint with tables, relationships, constraints, indexes, and migration strategy
+- **[api_spec.md](api_spec.md)** — Complete API contract: endpoints, request/response schemas, validation rules, error formats, pagination conventions
+- **[schema.md](schema.md)** — SQLite database schema: tables, columns, constraints, indexes, relationships
 
-**Why this matters:** Agents cross-reference these contracts to eliminate structural mismatches between frontend and backend, reducing integration bugs by up to 90%.
+Contracts are the source of truth. Never invent endpoint or table shapes in code. If the contract is wrong or missing, **update the contract first**, then implement. Cross-referencing both contracts eliminates structural mismatches between frontend and backend.
+
+### The Fixed Process
+
+Every feature follows the same three-step loop:
+
+1. **Plan** — `/plan-feature`, with `#api_spec.md` and `#schema.md` attached. If the feature touches the contract, update the contract *first* and review the file-by-file plan before any code is written. This gate is the one people skip when rushed — don't.
+2. **Execute** — Run backend and frontend in **separate sessions**, each invoking its own agent (`backend` or `frontend`), each with the plan + relevant contracts attached. Don't let one session sprawl across both stacks.
+3. **Verify** — `/generate-tests`, `/review-pr`, `/check-contract-drift`, plus the `stop` hook enforcing build + test + lint. Nothing is "done" until this passes.
 
 ### Custom Agents
 
-Specialized agent personas for different responsibilities:
-
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|
-| **architect** | Architecture and system design reviewer | Reviewing code structure, module organization, abstraction layers, or architectural decisions |
-| **tester** | Test generation specialist | Creating unit tests, integration tests, or improving test coverage for Go backend or React frontend |
-| **reviewer** | Code quality and best practices reviewer | Reviewing Go or TypeScript code for idioms, security, performance, and maintainability |
-| **frontend** | React and TypeScript frontend specialist | Building React components, implementing UI features, styling with Tailwind CSS, or integrating with backend API |
+| **architect** | Architecture and system design reviewer (read-only) | Reviewing code structure, module organization, abstraction layers, or architectural decisions |
 | **backend** | Go and Echo backend specialist | Implementing API endpoints, database operations, background jobs, or middleware |
+| **frontend** | React and TypeScript frontend specialist | Building React components, implementing UI features, styling with Tailwind CSS, or integrating with backend API |
+| **tester** | Test generation specialist | Creating unit tests, integration tests, or improving test coverage for Go backend or React frontend |
+| **reviewer** | Code quality and best practices reviewer (read-only) | Reviewing Go or TypeScript code for idioms, security, performance, and maintainability |
 
-**Usage:** Select the appropriate agent from the agent picker in VS Code, or let Copilot automatically delegate to the right agent based on your task description.
+Select the appropriate agent from the agent picker in VS Code, or let Copilot delegate based on the task description.
 
 ### Prompt Workflows (Slash Commands)
 
-Reusable workflows for common tasks:
-
-| Command | Purpose | Example |
-|---------|---------|---------|
-| `/plan-feature` | Generate comprehensive implementation plan | `/plan-feature Add commitment categorization with filtering` |
-| `/review-pr` | Perform comprehensive code review | `/review-pr PR #42` or `/review-pr current changes` |
-| `/generate-tests` | Generate test suites with high coverage | `/generate-tests CommitmentService` or `/generate-tests CommitmentCard component` |
-| `/create-endpoint` | Scaffold complete API endpoint | `/create-endpoint POST /api/v1/commitments` |
-| `/create-component` | Scaffold React component with tests | `/create-component CommitmentCard - displays commitment summary with edit/delete actions` |
-
-**Usage:** Type `/` in the chat input to see available prompts, then select and provide the required input.
+| Command | Purpose |
+|---------|---------|
+| `/plan-feature` | Generate a comprehensive implementation plan (Step 1 of the loop) |
+| `/create-endpoint` | Scaffold a complete API endpoint compliant with `api_spec.md` |
+| `/create-component` | Scaffold a React component with tests |
+| `/generate-tests` | Generate test suites with high coverage (Step 3 of the loop) |
+| `/review-pr` | Perform a comprehensive code review (Step 3 of the loop) |
+| `/check-contract-drift` | Verify implementation matches `api_spec.md` and `schema.md` (Step 3 of the loop) |
 
 ### Skills
 
-Multi-step workflows with bundled assets:
-
-#### Custom Skills (Project-Specific)
+Skills are on-demand multi-step workflows. Only two are part of the per-feature loop; the rest are ad-hoc.
 
 | Skill | Purpose | When to Use |
 |-------|---------|-------------|
-| **scaffold-domain-module** | Generate complete domain module | Creating a new business domain (e.g., commitments, reminders) with handler, service, repository, models, tests, and migration |
-| **api-endpoint-generator** | Generate API endpoint from spec | Implementing a new endpoint that must comply with api_spec.md contract |
-| **contract-validator** | Validate code against contracts | Checking if implementation matches api_spec.md and schema.md contracts |
+| **webapp-testing** | Playwright-based browser testing | Verifying frontend functionality, debugging UI behavior, capturing screenshots |
+| **security-review** | AI-powered security scanner | Scanning for injection flaws, auth/access control bugs, secrets exposure, insecure dependencies |
+| **quality-playbook** | Comprehensive quality audit | Quarterly or pre-release, not per-feature — heavy multi-phase audit with requirements derivation and spec audit |
+| **create-specification** | Structured specification writing | Ad-hoc, when creating a new AI-ready spec |
 
-#### Community Skills (from awesome-copilot)
-
-| Skill | Purpose | When to Use |
-|-------|---------|-------------|
-| **security-review** | AI-powered security scanner | Scanning code for SQL injection, XSS, command injection, exposed API keys, hardcoded secrets, insecure dependencies, access control issues |
-| **postgresql-code-review** | PostgreSQL-specific code review | Reviewing JSONB operations, array usage, custom types, schema design, function optimization, Row Level Security (RLS) |
-| **webapp-testing** | Playwright-based browser testing | Testing frontend functionality, debugging UI behavior, capturing browser screenshots, viewing browser logs |
-| **create-specification** | Structured specification writing | Creating AI-ready specifications with requirements, constraints, interfaces, and acceptance criteria |
-| **quality-playbook** | Comprehensive quality audit | Running multi-phase quality audit with requirements derivation, functional tests, code review, spec audit, and TDD verification |
-
-**Usage:** Type `/` in the chat input to see available skills, or mention the skill name in your request (e.g., "Run a security review on the authentication module").
+> **Note:** The `postgresql-code-review` skill exists in the repo but is **not advertised** — the database is SQLite, not PostgreSQL. It can be invoked directly if ever relevant.
 
 ### Hooks (Automated Validation)
 
-Deterministic checks that run at agent lifecycle points:
+Two hooks, kept deliberately light. The `pre-tool-use` deny-lists from earlier setups were dropped — they were brittle (regex-based SQL-injection checks, `any`-type bans) and duplicated what linters do better. Add narrow hooks reactively only when a specific recurring mistake appears.
 
 | Hook | When | What It Does |
 |------|------|--------------|
-| **pre-tool-use** | Before writing code | Validates Go code (SQL injection, error wrapping, Firebase abstraction), TypeScript code (no `any` types, no inline styles), SQL code (safe migrations, indexes, TIMESTAMPTZ) |
-| **post-tool-use** | After writing code | Runs formatters (gofmt, goimports, Prettier, ESLint, sql-formatter) to maintain code quality |
-| **stop** | Before completing task | Runs final validation (Go compilation, tests, TypeScript compilation, contract compliance, uncommitted changes, TODO/FIXME comments) |
-
-**Why this matters:** Hooks enforce project conventions automatically, catching issues before they're committed and maintaining consistent code quality.
+| **post-tool-use** | After writing code | Runs formatters (gofmt, goimports, Prettier, ESLint) — free, zero-risk |
+| **stop** | Before completing a task | Build + test + lint gate: Go build, Go test, golangci-lint, tsc, frontend tests, ESLint. Degrades gracefully (skips with a warning) if a tool isn't installed |
 
 ### File-Specific Instructions
 
@@ -180,138 +170,43 @@ Auto-attached guidelines for different file types:
 
 | Instruction File | Applies To | Key Guidelines |
 |-----------------|------------|----------------|
-| **go-backend.instructions.md** | `**/*.go` | Echo framework patterns, domain-driven architecture, error handling, structured logging, dependency injection |
-| **react-frontend.instructions.md** | `**/*.tsx, **/*.ts` | TypeScript strict mode, React hooks, Tailwind CSS, form handling, API integration, accessibility |
-| **database.instructions.md** | `**/migrations/**/*.sql, **/repositories/**/*.go` | Migration rules, parameterized queries, soft deletes, transactions, indexes, GDPR compliance |
-| **testing.instructions.md** | `**/*_test.go, **/*.test.ts, **/*.test.tsx` | Table-driven tests, coverage targets, mocking patterns, test organization, common pitfalls |
-| **api-contracts.instructions.md** | `**/handlers/**/*.go, **/services/**/*.go, **/repositories/**/*.go` | Cross-reference api_spec.md and schema.md, validation checklist, contract updates |
-
-**Why this matters:** Instructions auto-attach based on file patterns, ensuring agents follow project conventions without manual context management.
-
-### Example Workflows
-
-#### Workflow 1: Implementing a New Feature
-
-1. **Plan the feature:**
-   ```
-   /plan-feature Add commitment search with filters for category, status, and date range
-   ```
-   Review the generated plan, adjust if needed, and confirm the approach.
-
-2. **Create the backend endpoint:**
-   ```
-   /create-endpoint GET /api/v1/commitments/search
-   ```
-   The agent will generate handler, service, repository, models, and tests, ensuring compliance with api_spec.md.
-
-3. **Create the frontend component:**
-   ```
-   /create-component CommitmentSearchForm - search form with category, status, and date range filters
-   ```
-   The agent will generate the component with TypeScript, Tailwind CSS, tests, and Storybook stories.
-
-4. **Generate additional tests:**
-   ```
-   /generate-tests CommitmentSearchService
-   ```
-   The agent will create comprehensive tests with >80% coverage.
-
-5. **Review the implementation:**
-   ```
-   /review-pr current changes
-   ```
-   The agent will check code quality, security, performance, and adherence to conventions.
-
-6. **Run security review:**
-   ```
-   /security-review
-   ```
-   The agent will scan for vulnerabilities and propose patches.
-
-#### Workflow 2: Creating a New Domain Module
-
-1. **Scaffold the module:**
-   ```
-   /scaffold-domain-module reminders
-   ```
-   The agent will generate the complete module structure with handler, service, repository, models, tests, and migration.
-
-2. **Validate against contracts:**
-   ```
-   /contract-validator
-   ```
-   The agent will check if the implementation matches api_spec.md and schema.md.
-
-3. **Run quality playbook:**
-   ```
-   /quality-playbook
-   ```
-   The agent will run a comprehensive quality audit with requirements derivation, functional tests, code review, and spec audit.
-
-#### Workflow 3: Debugging and Testing
-
-1. **Test the frontend:**
-   ```
-   /webapp-testing
-   ```
-   The agent will use Playwright to test frontend functionality in a real browser.
-
-2. **Review PostgreSQL code:**
-   ```
-   /postgresql-code-review
-   ```
-   The agent will check for PostgreSQL-specific anti-patterns and optimization opportunities.
-
-3. **Generate missing tests:**
-   ```
-   /generate-tests CommitmentRepository
-   ```
-   The agent will create tests to improve coverage.
-
-### Best Practices
-
-1. **Start with contracts:** Always consult api_spec.md and schema.md before implementing features
-2. **Use the right agent:** Let Copilot delegate to specialized agents, or explicitly select one for focused tasks
-3. **Leverage prompt workflows:** Use slash commands for common tasks instead of writing detailed prompts
-4. **Trust the hooks:** Hooks will catch common mistakes automatically — don't disable them
-5. **Run reviews regularly:** Use `/review-pr` and `/security-review` before committing code
-6. **Validate contracts:** Use `/contract-validator` after significant changes to ensure compliance
-7. **Generate tests early:** Use `/generate-tests` immediately after implementing features
-8. **Plan before coding:** Use `/plan-feature` to think through implementation before writing code
+| **go-backend.instructions.md** | `**/*.go, **/go.mod, **/go.sum` | Echo patterns, domain-driven architecture, error handling, structured logging, dependency injection, SQLite migrations |
+| **react-frontend.instructions.md** | `**/*.tsx, **/*.ts, **/*.jsx, **/*.js` | TypeScript strict mode, React hooks, Tailwind CSS, form handling, API integration, accessibility |
+| **testing.instructions.md** | `**/*_test.go, **/*.test.ts, **/*.test.tsx, **/*.spec.ts, **/*.spec.tsx` | Table-driven tests, coverage targets, mocking patterns, test organization |
+| **api-contracts.instructions.md** | `**/handlers/**/*.go, **/services/**/*.go, **/repositories/**/*.go, **/models/**/*.go, **/api/**/*.ts, **/api/**/*.tsx` | Cross-reference `api_spec.md` and `schema.md` before writing handlers/services/repos/models |
 
 ### Updating Contracts
 
 When requirements change:
 
-1. **Update api_spec.md first** — Define the new endpoint or modify existing specification
-2. **Update schema.md** — Add tables, columns, or constraints as needed
-3. **Implement the changes** — Use agents and prompts to generate code that matches the updated contracts
-4. **Validate compliance** — Run `/contract-validator` to ensure implementation matches contracts
-5. **Update tests** — Run `/generate-tests` to update test coverage
+1. **Update `api_spec.md` first** — define the new endpoint or modify the existing specification
+2. **Update `schema.md`** — add tables, columns, or constraints as needed
+3. **Implement the changes** — use agents and prompts to generate code that matches the updated contracts
+4. **Verify** — run `/check-contract-drift` to confirm implementation matches contracts, then `/generate-tests` to update coverage
 
-**Why this order:** Updating contracts first ensures agents generate code that matches the new requirements, preventing drift between specification and implementation.
+Updating contracts first ensures agents generate code that matches the new requirements, preventing drift between specification and implementation.
 
 ### Troubleshooting
 
 **Agent not following conventions?**
-- Check if the appropriate instruction file exists and has correct `applyTo` patterns
+- Check that the appropriate instruction file exists and has correct `applyTo` patterns
 - Verify the agent description matches your task
 - Try explicitly selecting the agent instead of relying on auto-delegation
 
-**Hooks blocking valid code?**
+**Hook blocking valid code?**
 - Review the hook script in `.github/hooks/` to understand the validation logic
-- Temporarily disable the hook by renaming the JSON file (e.g., `pre-tool-use.json.disabled`)
-- Update the hook script to allow your valid pattern
+- Narrow the hook to allow your valid pattern — don't disable it wholesale
+- If a `stop` check is genuinely wrong, fix the check rather than removing the gate
 
 **Tests not generating correctly?**
 - Ensure the target code is well-structured and follows project conventions
 - Provide more specific input to `/generate-tests` (e.g., include function signatures)
-- Check if the testing.instructions.md file has appropriate patterns for your use case
+- Check that `testing.instructions.md` has appropriate patterns for your use case
 
 **Contract validation failing?**
-- Review api_spec.md and schema.md to ensure they're up to date
-- Check if the implementation intentionally deviates from the contract (update contract if needed)
-- Use `/contract-validator` with specific file paths to focus validation
+- Review `api_spec.md` and `schema.md` to ensure they're up to date
+- Check if the implementation intentionally deviates from the contract (update the contract if so)
+- Run `/check-contract-drift` with specific file paths to focus validation
 
 ## Build & Run Commands
 

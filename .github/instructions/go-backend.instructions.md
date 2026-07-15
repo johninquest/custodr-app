@@ -418,6 +418,59 @@ func (s *Service) CreateWithReminders(ctx context.Context, req CreateRequest) er
 }
 ```
 
+## Database Migrations (SQLite + golang-migrate)
+
+Use `golang-migrate` with the `sqlite3` driver. Migrations live in `migrations/` as paired up/down SQL files.
+
+### File Naming
+
+```
+migrations/
+├── 000001_create_users.up.sql
+├── 000001_create_users.down.sql
+├── 000002_create_commitments.up.sql
+├── 000002_create_commitments.down.sql
+├── 000003_create_reminders.up.sql
+└── 000003_create_reminders.down.sql
+```
+
+### Commands
+
+```bash
+# Create a new migration
+migrate create -ext sql -dir migrations -seq <descriptive_name>
+
+# Apply all pending migrations
+migrate -path migrations -database "sqlite3://<db_path>" up
+
+# Rollback the last migration
+migrate -path migrations -database "sqlite3://<db_path>" down 1
+
+# Check current migration version
+migrate -path migrations -database "sqlite3://<db_path>" version
+```
+
+### SQLite-Specific Rules
+
+1. **Foreign keys are off by default.** Enable them on every connection:
+   ```go
+   db, _ := sqlx.Connect("sqlite3", dsn)
+   db.Exec("PRAGMA foreign_keys = ON;")
+   ```
+   Forgetting this silently allows orphaned rows.
+
+2. **Primary keys are `TEXT` storing UUIDs** generated in the application layer (e.g. `uuid.NewString()`). SQLite has no `gen_random_uuid()`.
+
+3. **Timestamps are `TEXT` in ISO 8601 UTC.** Set `created_at` on INSERT and update `updated_at` in application code — SQLite has no trigger language comparable to PL/pgSQL. Use `datetime('now')` for soft-delete `deleted_at`.
+
+4. **Money is integer cents.** Store as `INTEGER`, never `REAL` (floating-point).
+
+5. **Enums are `TEXT` with `CHECK` constraints**, not native enum types.
+
+6. **SQLCipher key management.** The encryption key comes from configuration (env var / secret manager), never hardcoded or committed. See `.env.example` for the `DB_KEY` convention.
+
+7. **Cross-reference `schema.md`** before writing any migration — it is the source of truth for table/column names, types, and constraints.
+
 ## Structured Logging (zerolog)
 
 ```go
