@@ -1,0 +1,13 @@
+# Go
+.git
+.gitignore
+.env
+.env.*
+*.md
+Makefile
+.air.toml
+tmp/
+data/
+bin/
+coverage.out
+*.test
