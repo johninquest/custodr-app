@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+  # ============================================
+  # Go Backend API
+  # ============================================
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: commit-mgr-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8080
+      - DB_PATH=/data/commitmgr.db
+      - DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY:-}
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
+      - FIREBASE_CREDENTIALS_PATH=/app/firebase-service-account.json
+      - MAILJET_API_KEY=${MAILJET_API_KEY:-}
+      - MAILJET_API_SECRET=${MAILJET_API_SECRET:-}
+      - MAILJET_FROM_EMAIL=${MAILJET_FROM_EMAIL:-noreply@example.com}
+      - MAILJET_FROM_NAME=${MAILJET_FROM_NAME:-Commitment Manager}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - sqlite-data:/data
+      # Mount Firebase credentials if available
+      - ${FIREBASE_CREDENTIALS_PATH:-./firebase-service-account.json}:/app/firebase-service-account.json:ro
+    networks:
+      - commit-mgr-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ============================================
+  # React Frontend
+  # ============================================
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: commit-mgr-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - commit-mgr-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  sqlite-data:
+    driver: local
+
+networks:
+  commit-mgr-network:
+    driver: bridge

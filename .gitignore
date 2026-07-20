@@ -15,10 +15,21 @@ data/
 # Go binaries
 bin/
 *.exe
+*.dll
+*.so
+*.dylib
+
+# Go test/coverage
+*.test
+*.out
+coverage.out
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
 # OS
 .DS_Store
@@ -28,12 +39,33 @@ Thumbs.db
 node_modules/
 dist/
 build/
+.next/
+.turbo/
 
 # Test coverage
-coverage.out
 coverage/
 *.cover
+*.lcov
 
 # Backup files
 *.bak
 backups/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Firebase
+firebase-service-account.json
+firebase-debug.log
+ui-debug.log
+
+# Docker
+.docker/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

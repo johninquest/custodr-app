@@ -210,7 +210,43 @@ Updating contracts first ensures agents generate code that matches the new requi
 
 ## Build & Run Commands
 
-> *No code exists yet. Update this section once the project is scaffolded.*
+### Monorepo (Turborepo + npm workspaces)
+
+```bash
+npm run dev          # Start all dev servers
+npm run build        # Build all apps
+npm run test         # Run all tests
+npm run lint         # Lint all apps
+```
+
+### Backend (apps/api/)
+
+```bash
+make run             # Start development server
+make build           # Build binary
+make test            # Run tests with coverage
+make lint            # Run golangci-lint
+make migrate-up      # Run database migrations
+make migrate-down    # Rollback migrations
+make fmt             # Format code (gofmt + goimports)
+make tidy            # Tidy Go modules
+```
+
+### Frontend (apps/web/)
+
+```bash
+npm run dev          # Start Vite dev server (port 5173)
+npm run build        # Build production bundle
+npm run lint         # Run ESLint
+npm run preview      # Preview production build
+```
+
+### Docker
+
+```bash
+docker compose up --build                                    # Production-like
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build  # Dev with hot reload
+```
 
 ## Pitfalls to Avoid
 

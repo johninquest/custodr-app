@@ -1,0 +1,36 @@
+version: "3.8"
+
+# Development overrides - use with:
+# docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # ============================================
+  # Go Backend API (Development)
+  # ============================================
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./apps/api:/app
+      - sqlite-data:/data
+    environment:
+      - LOG_LEVEL=debug
+    # Use air for hot reload in development
+    command: ["air", "-c", ".air.toml"]
+
+  # ============================================
+  # React Frontend (Development)
+  # ============================================
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./apps/web/src:/app/src
+      - ./apps/web/public:/app/public
+      - ./apps/web/index.html:/app/index.html
+    environment:
+      - VITE_API_BASE_URL=/api/v1
+    # Vite dev server with HMR
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

@@ -7,6 +7,16 @@ Production: https://api.example.com/api/v1
 Development: http://localhost:8080/api/v1
 ```
 
+## Currency Convention
+
+All monetary values in the API are represented as **decimal numbers** (e.g., `15.99` for €15.99). The backend stores amounts as **INTEGER cents** in SQLite (e.g., `1599`) to avoid floating-point precision issues. Conversion between decimals and cents happens in the service layer.
+
+- API request: `"cost": 15.99` (decimal)
+- Database storage: `cost = 1599` (integer cents)
+- API response: `"cost": 15.99` (decimal)
+
+---
+
 ## Authentication
 
 All endpoints except `/auth/*` require a valid Firebase ID token in the `Authorization` header:
@@ -46,6 +56,38 @@ Exchange Firebase ID token for internal session.
 **Errors:**
 - `401 Unauthorized` — Invalid or expired Firebase token
 - `500 Internal Server Error` — Failed to create/retrieve user
+
+---
+
+### Users
+
+#### GET /users/me
+
+Retrieve the authenticated user's profile.
+
+**Response (200 OK):**
+```json
+{
+  "id": "uuid",
+  "email": "user@example.com",
+  "email_verified": true,
+  "created_at": "2026-07-13T10:00:00Z",
+  "updated_at": "2026-07-13T10:00:00Z"
+}
+```
+
+**Errors:**
+- `401 Unauthorized` — Missing or invalid authentication
+
+#### DELETE /users/me
+
+Permanently delete the authenticated user's account and all associated data (GDPR right to erasure). This is a hard delete — all commitments, reminders, and notification records are removed.
+
+**Response (204 No Content):** Empty response
+
+**Errors:**
+- `401 Unauthorized` — Missing or invalid authentication
+- `500 Internal Server Error` — Failed to delete user data
 
 ---
 
@@ -370,8 +412,10 @@ Get dashboard summary data.
   "commitments_by_category": {
     "streaming_subscription": 5,
     "insurance": 3,
-    "utility": 4,
-    "telecom": 2,
+    "electricity_contract": 2,
+    "gas_contract": 1,
+    "mobile_contract": 1,
+    "internet_contract": 1,
     "other": 1
   },
   "monthly_cost": {
@@ -517,6 +561,36 @@ Content-Type: application/json
 
 - **Dates**: ISO 8601 date format (YYYY-MM-DD)
 - **Timestamps**: ISO 8601 with timezone (YYYY-MM-DDTHH:MM:SSZ)
+
+---
+
+## Reminder System Architecture
+
+The reminder system operates in two modes:
+
+### 1. User-Facing API (In-App Reminders)
+
+The `GET /reminders` endpoint returns reminder records for display in the frontend. Reminders are automatically generated when a commitment is created or updated, based on the user's `reminder_preferences`. Each reminder represents a scheduled notification at a specific window (e.g., 30 days before cancellation deadline).
+
+**Reminder generation flow:**
+1. User creates/updates a commitment with renewal and/or cancellation dates
+2. Service layer reads user's `reminder_preferences` (default: `[90, 60, 30, 14, 7, 1]`)
+3. For each window, calculate `scheduled_date = deadline - days_before`
+4. Insert reminder records with `status = 'pending'`
+5. Frontend polls `GET /reminders` to display upcoming/past reminders
+
+### 2. Background Job (Email Delivery)
+
+A separate background worker process scans for pending reminders whose `scheduled_date` is today or earlier, sends emails via the configured email provider, and updates reminder status to `sent` or `failed`.
+
+**Background job flow:**
+1. Worker runs on a schedule (e.g., daily at 08:00 CET)
+2. Query: `SELECT * FROM reminders WHERE status = 'pending' AND scheduled_date <= date('now')`
+3. For each pending reminder, send email via Mailjet/Postmark
+4. Update reminder status and log to `notifications` table
+5. Retry failed sends with exponential backoff (max 3 attempts)
+
+> **Note:** Reminder system implementation is deferred to a later phase. The API endpoints and database schema are defined here for completeness.
 
 ---
 
