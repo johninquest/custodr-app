@@ -1,11 +1,11 @@
 ---
 name: check-contract-drift
-description: "Verify the implementation matches the contracts. Diffs handlers, services, repositories, models, and migrations against api_spec.md and schema.md, then reports mismatches with file:line references."
+description: "Verify the implementation matches the contracts. Diffs handlers, services, repositories, models, and migrations against docs/api_spec.md and docs/schema.md, then reports mismatches with file:line references."
 ---
 
 # Check Contract Drift
 
-Verify that the current implementation matches the contracts in `api_spec.md` and `schema.md`. Report any drift.
+Verify that the current implementation matches the contracts in `docs/api_spec.md` and `docs/schema.md`. Report any drift.
 
 ## Instructions
 
@@ -15,10 +15,10 @@ You are a contract compliance auditor. Your job is to find every place where the
 
 Read both contract files in full:
 
-- `api_spec.md` — endpoints, HTTP methods, request/response schemas, status codes, error formats, pagination conventions.
-- `schema.md` — SQLite tables, column names and types, constraints, indexes, relationships.
+- `docs/api_spec.md` — endpoints, HTTP methods, request/response schemas, status codes, error formats, pagination conventions.
+- `docs/schema.md` — SQLite tables, column names and types, constraints, indexes, relationships.
 
-### Step 2: Audit Against `api_spec.md`
+### Step 2: Audit Against `docs/api_spec.md`
 
 For each endpoint declared in the spec, find its handler and verify:
 
@@ -31,7 +31,7 @@ For each endpoint declared in the spec, find its handler and verify:
 
 Flag any endpoint in the spec that has no handler, and any handler route that has no spec entry.
 
-### Step 3: Audit Against `schema.md`
+### Step 3: Audit Against `docs/schema.md`
 
 For each table in the spec, find the migration that creates it and verify:
 
@@ -47,8 +47,8 @@ Flag any table in the spec with no migration, and any migration creating a table
 
 Verify Go model structs and TypeScript API types reference the same field names and types as the contracts. Flag mismatches in:
 
-- `internal/*/models/*.go` vs `schema.md` columns.
-- `api/**/*.ts` / `api/**/*.tsx` request/response types vs `api_spec.md` schemas.
+- `internal/*/models/*.go` vs `docs/schema.md` columns.
+- `api/**/*.ts` / `api/**/*.tsx` request/response types vs `docs/api_spec.md` schemas.
 
 ### Step 5: Report
 

@@ -28,10 +28,10 @@ Commitment Manager helps German/EU consumers centrally manage all their recurrin
 
 | Document | Purpose |
 |----------|---------|
-| [BRD-RenewalApp.txt](BRD-RenewalApp.txt) | Business Requirements Document — MVP scope, functional/non-functional requirements, success criteria |
-| [tech_stack_considerations_digital_renewal_platform.md](tech_stack_considerations_digital_renewal_platform.md) | Architecture decisions, trade-offs, Go vs NestJS analysis |
-| [api_spec.md](api_spec.md) | API contract — endpoints, request/response schemas, validation rules, error formats |
-| [schema.md](schema.md) | Database schema — tables, relationships, constraints, indexes, migration strategy |
+| [BRD-RenewalApp.txt](docs/BRD-RenewalApp.txt) | Business Requirements Document — MVP scope, functional/non-functional requirements, success criteria |
+| [tech_stack_considerations_digital_renewal_platform.md](docs/tech_stack_considerations_digital_renewal_platform.md) | Architecture decisions, trade-offs, Go vs NestJS analysis |
+| [api_spec.md](docs/api_spec.md) | API contract — endpoints, request/response schemas, validation rules, error formats |
+| [schema.md](docs/schema.md) | Database schema — tables, relationships, constraints, indexes, migration strategy |
 | [AGENTS.md](AGENTS.md) | AI agent instructions — project conventions, architecture rules, and agentic engineering workflow |
 
 ## Agentic Engineering
@@ -90,7 +90,11 @@ commit-mgr/
 │       └── Dockerfile
 ├── packages/                    # Shared packages (future)
 ├── docs/
-│   └── AGENTIC_ENGINEERING.md   # Agentic engineering guide
+│   ├── AGENTIC_ENGINEERING.md   # Agentic engineering guide
+│   ├── api_spec.md              # API contract
+│   ├── schema.md                # Database schema
+│   ├── BRD-RenewalApp.txt       # Business Requirements Document
+│   └── tech_stack_considerations_digital_renewal_platform.md  # Architecture decisions
 ├── .github/
 │   ├── agents/                  # Custom agent definitions
 │   ├── instructions/            # File-specific instruction files
@@ -101,8 +105,6 @@ commit-mgr/
 ├── package.json                 # Root workspace config
 ├── docker-compose.yml           # Production Docker Compose
 ├── docker-compose.dev.yml       # Development Docker Compose
-├── api_spec.md                  # API contract
-├── schema.md                    # Database schema
 └── AGENTS.md                    # AI agent instructions
 ```
 

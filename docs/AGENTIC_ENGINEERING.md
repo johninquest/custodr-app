@@ -9,7 +9,7 @@ This project uses a comprehensive agentic engineering setup built on GitHub Copi
 ## Table of Contents
 
 - [Quick Start](#quick-start)
-- [Contracts: api_spec.md and schema.md](#contracts)
+- [Contracts: docs/api_spec.md and docs/schema.md](#contracts)
 - [Custom Agents](#custom-agents)
 - [Prompt Workflows (Slash Commands)](#prompt-workflows)
 - [Skills](#skills)
@@ -40,7 +40,7 @@ Two contract documents serve as the single source of truth for the entire projec
 
 ### api_spec.md
 
-Located at the project root. Defines:
+Located in the `docs/` directory. Defines:
 
 - All REST API endpoints with HTTP methods and paths
 - Request body schemas with validation rules
@@ -50,11 +50,11 @@ Located at the project root. Defines:
 - HTTP status code usage
 - Rate limiting and CORS policies
 
-**When to use it:** Before implementing any API endpoint, read the relevant section of `api_spec.md` to understand the expected request/response format. When adding new endpoints, update `api_spec.md` first, then implement.
+**When to use it:** Before implementing any API endpoint, read the relevant section of `docs/api_spec.md` to understand the expected request/response format. When adding new endpoints, update `docs/api_spec.md` first, then implement.
 
 ### schema.md
 
-Located at the project root. Defines:
+Located in the `docs/` directory. Defines:
 
 - All PostgreSQL tables with columns, types, and constraints
 - Enum types (commitment_status, billing_frequency, etc.)
@@ -64,11 +64,11 @@ Located at the project root. Defines:
 - Migration strategy and naming conventions
 - Backup and GDPR compliance procedures
 
-**When to use it:** Before writing any database query or migration, read the relevant section of `schema.md`. When adding tables or columns, update `schema.md` first, then create the migration.
+**When to use it:** Before writing any database query or migration, read the relevant section of `docs/schema.md`. When adding tables or columns, update `docs/schema.md` first, then create the migration.
 
 ### How agents use contracts
 
-The `api-contracts.instructions.md` file auto-attaches to handler, service, and repository files. It instructs agents to cross-reference `api_spec.md` and `schema.md` before implementing code, ensuring the implementation matches the contract.
+The `api-contracts.instructions.md` file auto-attaches to handler, service, and repository files. It instructs agents to cross-reference `docs/api_spec.md` and `docs/schema.md` before implementing code, ensuring the implementation matches the contract.
 
 ---
 
@@ -213,8 +213,8 @@ Generates a comprehensive implementation plan before writing code.
 **Output:**
 - Requirements breakdown (functional and non-functional)
 - Affected modules (backend, frontend, database)
-- API endpoints needed (with reference to api_spec.md)
-- Database changes (with reference to schema.md)
+- API endpoints needed (with reference to docs/api_spec.md)
+- Database changes (with reference to docs/schema.md)
 - Step-by-step implementation guide
 - Risk assessment and effort estimate
 
@@ -262,9 +262,9 @@ Scaffolds a complete API endpoint with all layers.
 - Handler (Echo HTTP handler)
 - Tests for all layers
 - Migration file (if new table needed)
-- Updated api_spec.md entry
+- Updated docs/api_spec.md entry
 
-**When to use:** When adding a new API endpoint. Always cross-references api_spec.md for contract compliance.
+**When to use:** When adding a new API endpoint. Always cross-references docs/api_spec.md for contract compliance.
 
 ### /create-component
 

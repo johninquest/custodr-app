@@ -8,8 +8,8 @@ Target: German/EU consumers. MVP phase — validating whether users will enter a
 
 ## Key Documents
 
-- [Business Requirements Document](BRD-RenewalApp.txt) — MVP scope, functional/non-functional requirements, success criteria, business risks
-- [Tech Stack Considerations](tech_stack_considerations_digital_renewal_platform.md) — Architecture decisions, trade-offs, Go vs NestJS analysis, deployment model
+- [Business Requirements Document](docs/BRD-RenewalApp.txt) — MVP scope, functional/non-functional requirements, success criteria, business risks
+- [Tech Stack Considerations](docs/tech_stack_considerations_digital_renewal_platform.md) — Architecture decisions, trade-offs, Go vs NestJS analysis, deployment model
 
 ## Technology Stack
 
@@ -106,8 +106,8 @@ This project uses a lightweight agentic engineering setup: a fixed process loop,
 
 Before writing any code, consult these contract documents:
 
-- **[api_spec.md](api_spec.md)** — Complete API contract: endpoints, request/response schemas, validation rules, error formats, pagination conventions
-- **[schema.md](schema.md)** — SQLite database schema: tables, columns, constraints, indexes, relationships
+- **[api_spec.md](docs/api_spec.md)** — Complete API contract: endpoints, request/response schemas, validation rules, error formats, pagination conventions
+- **[schema.md](docs/schema.md)** — SQLite database schema: tables, columns, constraints, indexes, relationships
 
 Contracts are the source of truth. Never invent endpoint or table shapes in code. If the contract is wrong or missing, **update the contract first**, then implement. Cross-referencing both contracts eliminates structural mismatches between frontend and backend.
 
@@ -115,7 +115,7 @@ Contracts are the source of truth. Never invent endpoint or table shapes in code
 
 Every feature follows the same three-step loop:
 
-1. **Plan** — `/plan-feature`, with `#api_spec.md` and `#schema.md` attached. If the feature touches the contract, update the contract *first* and review the file-by-file plan before any code is written. This gate is the one people skip when rushed — don't.
+1. **Plan** — `/plan-feature`, with `#docs/api_spec.md` and `#docs/schema.md` attached. If the feature touches the contract, update the contract *first* and review the file-by-file plan before any code is written. This gate is the one people skip when rushed — don't.
 2. **Execute** — Run backend and frontend in **separate sessions**, each invoking its own agent (`backend` or `frontend`), each with the plan + relevant contracts attached. Don't let one session sprawl across both stacks.
 3. **Verify** — `/generate-tests`, `/review-pr`, `/check-contract-drift`, plus the `stop` hook enforcing build + test + lint. Nothing is "done" until this passes.
 

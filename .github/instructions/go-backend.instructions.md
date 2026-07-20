@@ -469,7 +469,7 @@ migrate -path migrations -database "sqlite3://<db_path>" version
 
 6. **SQLCipher key management.** The encryption key comes from configuration (env var / secret manager), never hardcoded or committed. See `.env.example` for the `DB_KEY` convention.
 
-7. **Cross-reference `schema.md`** before writing any migration — it is the source of truth for table/column names, types, and constraints.
+7. **Cross-reference `docs/schema.md`** before writing any migration — it is the source of truth for table/column names, types, and constraints.
 
 ## Structured Logging (zerolog)
 

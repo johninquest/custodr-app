@@ -80,8 +80,8 @@ Verify:
 Verify compliance with:
 
 - **Project structure**: Domain-based organization
-- **API contracts**: Do endpoints match api_spec.md?
-- **Database schema**: Do tables match schema.md?
+- **API contracts**: Do endpoints match docs/api_spec.md?
+- **Database schema**: Do tables match docs/schema.md?
 - **Error format**: Standard error response format
 - **Logging**: Structured logging with zerolog
 - **Documentation**: Are exported functions documented?

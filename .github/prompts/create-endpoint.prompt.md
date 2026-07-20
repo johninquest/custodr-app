@@ -24,14 +24,14 @@ Extract from the endpoint spec:
 
 ### Step 2: Cross-Reference Contracts
 
-Check `api_spec.md` for:
+Check `docs/api_spec.md` for:
 
 - Request/response format
 - Validation rules
 - Error codes
 - Pagination format
 
-Check `schema.md` for:
+Check `docs/schema.md` for:
 
 - Table structure
 - Column names and types
@@ -241,7 +241,7 @@ func TestHandler_Create(t *testing.T) {
 
 ### Step 8: Update Documentation
 
-Update `api_spec.md` with:
+Update `docs/api_spec.md` with:
 
 - Endpoint specification
 - Request/response examples
@@ -364,4 +364,4 @@ go test ./internal/[module]/... -cover
 - Filter queries by user_id for security
 - Use soft deletes with `deleted_at` timestamp
 - Generate comprehensive tests with table-driven pattern
-- Update api_spec.md to keep contracts in sync
+- Update docs/api_spec.md to keep contracts in sync

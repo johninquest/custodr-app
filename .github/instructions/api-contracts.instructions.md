@@ -9,8 +9,8 @@ applyTo: "**/handlers/**/*.go,**/services/**/*.go,**/repositories/**/*.go,**/mod
 
 Before implementing any API endpoint or database operation, cross-reference these contract files:
 
-- **API Contract**: [api_spec.md](../../api_spec.md) — Endpoints, request/response formats, validation rules, error codes
-- **Database Schema**: [schema.md](../../schema.md) — SQLite tables, columns, constraints, indexes, relationships
+- **API Contract**: [api_spec.md](../../docs/api_spec.md) — Endpoints, request/response formats, validation rules, error codes
+- **Database Schema**: [schema.md](../../docs/schema.md) — SQLite tables, columns, constraints, indexes, relationships
 
 ## Implementation Rules
 
@@ -146,7 +146,7 @@ When implementing endpoints, create tests that verify:
 
 If you need to modify the API or database schema:
 
-1. **Update contract files first**: Modify api_spec.md or schema.md
+1. **Update contract files first**: Modify docs/api_spec.md or docs/schema.md
 2. **Review impact**: Identify all affected endpoints and queries
 3. **Update implementation**: Modify code to match new contract
 4. **Update tests**: Ensure tests validate new contract

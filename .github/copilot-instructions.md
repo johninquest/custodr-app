@@ -4,7 +4,7 @@ These rules are always on. They describe the fixed loop every feature follows. F
 
 ## The Fixed Loop
 
-1. **Plan** — Use `/plan-feature`. Attach `#api_spec.md` and `#schema.md`. If the feature touches the contract, **update the contract first** and review the file-by-file plan before any code is written. This gate is the one people skip when rushed — don't.
+1. **Plan** — Use `/plan-feature`. Attach `#docs/api_spec.md` and `#docs/schema.md`. If the feature touches the contract, **update the contract first** and review the file-by-file plan before any code is written. This gate is the one people skip when rushed — don't.
 2. **Execute** — Run backend and frontend in **separate sessions**, each invoking its own agent (`backend` or `frontend`), each with the plan + relevant contracts attached. Do not let one session sprawl across both stacks.
 3. **Verify** — Run `/generate-tests`, `/review-pr`, and `/check-contract-drift`. The `stop` hook enforces build + test + lint. Nothing is "done" until this passes.
 
