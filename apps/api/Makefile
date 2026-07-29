@@ -1,4 +1,4 @@
-.PHONY: run build test lint migrate-up migrate-down migrate-create clean
+.PHONY: run build test lint migrate-up migrate-down migrate-create clean swagger
 
 # Run the server
 run:
@@ -15,6 +15,10 @@ test:
 # Run linter
 lint:
 	golangci-lint run
+
+# Generate Swagger documentation
+swagger:
+	swag init -g cmd/server/main.go -o docs
 
 # Run migrations up
 migrate-up:

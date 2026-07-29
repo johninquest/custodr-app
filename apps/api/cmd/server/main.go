@@ -9,12 +9,39 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/commit-mgr/api/internal/auth"
 	"github.com/commit-mgr/api/internal/shared/config"
 	"github.com/commit-mgr/api/internal/shared/database"
 	"github.com/commit-mgr/api/internal/shared/logger"
+	appMiddleware "github.com/commit-mgr/api/internal/shared/middleware"
+	"github.com/commit-mgr/api/internal/users"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
+
+	// Swagger docs (generated)
+	_ "github.com/commit-mgr/api/docs"
 )
+
+// @title Commitment Manager API
+// @version 1.0
+// @description API for managing recurring commitments and renewal obligations
+// @description
+// @description All endpoints except /auth/* require a valid Firebase ID token in the Authorization header.
+
+// @contact.name API Support
+// @contact.email support@example.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Firebase ID token (format: "Bearer <token>")
 
 func main() {
 	// Load configuration
@@ -65,14 +92,49 @@ func main() {
 		})
 	})
 
-	// API routes
-	_ = e.Group("/api/v1")
+	// Swagger UI (public, no auth required)
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
-	// TODO: Register route handlers
-	// auth.RegisterRoutes(api, ...)
-	// users.RegisterRoutes(api, ...)
-	// commitments.RegisterRoutes(api, ...)
-	// reminders.RegisterRoutes(api, ...)
+	// Initialize Firebase token verifier
+	var tokenVerifier auth.TokenVerifier
+	if cfg.FirebaseProjectID != "" && cfg.FirebaseCredentialsPath != "" {
+		firebaseProvider, err := auth.NewFirebaseProvider(context.Background(), cfg.FirebaseProjectID, cfg.FirebaseCredentialsPath)
+		if err != nil {
+			log.Warn("Failed to initialize Firebase, auth will be disabled", "error", err)
+		} else {
+			tokenVerifier = firebaseProvider
+			log.Info("Firebase authentication initialized")
+		}
+	} else {
+		log.Warn("Firebase credentials not configured, auth will be disabled")
+	}
+
+	// Initialize repositories and services
+	authRepo := auth.NewRepository(db)
+	usersRepo := users.NewRepository(db)
+
+	var authHandler *auth.Handler
+	if tokenVerifier != nil {
+		authService := auth.NewService(authRepo, tokenVerifier)
+		usersService := users.NewService(usersRepo)
+		authHandler = auth.NewHandler(authService, usersService)
+
+		// API routes
+		api := e.Group("/api/v1")
+
+		// Public routes (no auth required)
+		api.POST("/auth/login", authHandler.Login)
+
+		// Protected routes (auth required)
+		protected := api.Group("")
+		protected.Use(appMiddleware.AuthMiddleware(tokenVerifier, authRepo))
+		protected.GET("/users/me", authHandler.GetProfile)
+		protected.DELETE("/users/me", authHandler.DeleteAccount)
+
+		log.Info("Authentication routes registered")
+	} else {
+		log.Warn("Authentication disabled - no routes registered")
+	}
 
 	// Start server
 	go func() {
