@@ -13,8 +13,7 @@ type Config struct {
 	ServerPort string
 
 	// Database
-	DBPath          string
-	DBEncryptionKey string
+	DBPath string
 
 	// Firebase
 	FirebaseProjectID       string
@@ -44,8 +43,7 @@ func Load() (*Config, error) {
 		ServerPort: getEnv("SERVER_PORT", "8080"),
 
 		// Database
-		DBPath:          getEnv("DB_PATH", "./data/commitmgr.db"),
-		DBEncryptionKey: getEnv("DB_ENCRYPTION_KEY", ""),
+		DBPath: getEnv("DB_PATH", "./data/commitmgr.db"),
 
 		// Firebase
 		FirebaseProjectID:       getEnv("FIREBASE_PROJECT_ID", ""),

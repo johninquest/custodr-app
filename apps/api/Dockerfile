@@ -3,9 +3,6 @@
 # ============================================
 FROM golang:1.21-alpine AS builder
 
-# Install build dependencies for CGO (required by go-sqlite3)
-RUN apk add --no-cache gcc musl-dev sqlite-dev
-
 WORKDIR /app
 
 # Copy dependency files first for better layer caching
@@ -15,10 +12,8 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the binary with CGO enabled for SQLite
-# CGO_ENABLED=1 is required for go-sqlite3
-# Static linking where possible
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
+# Build the binary — modernc.org/sqlite is pure Go, no CGO required
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-w -s" \
     -o /app/server \
     ./cmd/server
@@ -29,7 +24,7 @@ RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
 FROM alpine:3.19 AS runtime
 
 # Install runtime dependencies
-RUN apk add --no-cache ca-certificates tzdata sqlite-libs
+RUN apk add --no-cache ca-certificates tzdata
 
 # Create non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

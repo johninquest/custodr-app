@@ -33,7 +33,7 @@ func main() {
 	defer log.Sync()
 
 	// Initialize database
-	db, err := database.New(cfg.DBPath, cfg.DBEncryptionKey)
+	db, err := database.New(cfg.DBPath)
 	if err != nil {
 		log.Fatal("Failed to initialize database", "error", err)
 	}

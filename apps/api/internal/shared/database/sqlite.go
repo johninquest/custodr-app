@@ -7,45 +7,35 @@ import (
 	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
-// New creates a new database connection
-func New(dbPath, encryptionKey string) (*sql.DB, error) {
+// New creates a new database connection.
+// Encryption at rest is handled at the filesystem level (e.g. LUKS/dm-crypt),
+// not by the driver.
+func New(dbPath string) (*sql.DB, error) {
 	// Ensure data directory exists
 	dir := filepath.Dir(dbPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create data directory: %w", err)
 	}
 
-	// Build connection string
-	dsn := dbPath
-	if encryptionKey != "" {
-		// SQLCipher encryption
-		dsn = fmt.Sprintf("%s?_pragma_key=x'%s'&_pragma_cipher_page_size=4096", dbPath, encryptionKey)
-	}
-
-	// Open database
-	db, err := sql.Open("sqlite3", dsn)
+	// Open database — modernc.org/sqlite registers the "sqlite" driver name
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	// Enable foreign keys
-	if _, err := db.Exec("PRAGMA foreign_keys = ON;"); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
-	}
-
-	// Set pragmas for performance
+	// Set pragmas for performance and correctness
 	pragmas := []string{
 		"PRAGMA journal_mode = WAL;",
 		"PRAGMA synchronous = NORMAL;",
 		"PRAGMA cache_size = -64000;", // 64MB
 		"PRAGMA foreign_keys = ON;",
 		"PRAGMA temp_store = MEMORY;",
+		"PRAGMA busy_timeout = 5000;",
 	}
 
 	for _, pragma := range pragmas {
@@ -77,8 +67,8 @@ func Migrate(db *sql.DB, dbPath string) error {
 		migrationsPath = filepath.Join(filepath.Dir(ex), "migrations")
 	}
 
-	// Create migration driver
-	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
+	// Create migration driver (sqlite package works with modernc.org/sqlite)
+	driver, err := sqlite.WithInstance(db, &sqlite.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to create migration driver: %w", err)
 	}
@@ -86,7 +76,7 @@ func Migrate(db *sql.DB, dbPath string) error {
 	// Create migrator
 	m, err := migrate.NewWithDatabaseInstance(
 		fmt.Sprintf("file://%s", migrationsPath),
-		"sqlite3",
+		"sqlite",
 		driver,
 	)
 	if err != nil {

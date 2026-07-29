@@ -18,11 +18,11 @@ lint:
 
 # Run migrations up
 migrate-up:
-	migrate -path migrations -database "sqlite3://./data/commitmgr.db" up
+	migrate -path migrations -database "sqlite://./data/commitmgr.db" up
 
 # Run migrations down
 migrate-down:
-	migrate -path migrations -database "sqlite3://./data/commitmgr.db" down
+	migrate -path migrations -database "sqlite://./data/commitmgr.db" down
 
 # Create a new migration
 migrate-create:

@@ -19,7 +19,7 @@ These rules are always on. They describe the fixed loop every feature follows. F
 
 - **Backend**: Go + Echo, modular monolith, domain-based packages under `internal/`.
 - **Frontend**: React + TypeScript + Tailwind CSS.
-- **Database**: SQLite (SQLCipher for encryption at rest). See `go-backend.instructions.md` for SQLite-specific rules (PRAGMA foreign_keys, TEXT UUIDs, integer cents, TEXT timestamps).
+- **Database**: SQLite (modernc.org/sqlite, pure Go driver). Encryption at rest is handled at the filesystem level (LUKS/dm-crypt). See `go-backend.instructions.md` for SQLite-specific rules (PRAGMA foreign_keys, TEXT UUIDs, integer cents, TEXT timestamps).
 
 ## When in Doubt
 

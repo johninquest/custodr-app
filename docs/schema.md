@@ -2,7 +2,7 @@
 
 ## Overview
 
-SQLite database schema (with SQLCipher for encryption at rest) for the Commitment Management Platform. All tables use `TEXT` primary keys storing UUIDs generated in the application layer, and include audit timestamps stored as `TEXT` in ISO 8601 UTC.
+SQLite database schema for the Commitment Management Platform. The driver is `modernc.org/sqlite` (pure Go); encryption at rest is handled at the filesystem level (LUKS/dm-crypt). All tables use `TEXT` primary keys storing UUIDs generated in the application layer, and include audit timestamps stored as `TEXT` in ISO 8601 UTC.
 
 ### SQLite Conventions
 
@@ -380,7 +380,7 @@ migrations/
 ### Daily Backups
 
 - **Frequency**: Daily at 2:00 AM CET
-- **Method**: Copy the SQLite database file (SQLCipher already encrypts at rest). Use `sqlite3 <db> ".backup '<backup_path>'"` for a consistent online backup, or stop the writer briefly and copy the file.
+- **Method**: Use `sqlite3 <db> ".backup '<backup_path>'"` for a consistent online backup, or stop the writer briefly and copy the file. Encrypt the backup (e.g. `age`/`gpg`) before uploading off-host.
 - **Retention**: 30 days
 - **Storage**: Encrypted off-host storage (Hetzner Storage Box)
 
@@ -440,17 +440,17 @@ Track these metrics:
 
 ### Encryption at Rest
 
-SQLCipher provides transparent encryption at the file level:
+Encryption is applied at the filesystem level, not the database driver level:
 
-- **At rest**: SQLCipher encrypts the database file with AES-256. The key comes from configuration (env var / secret manager), never hardcoded or committed.
+- **At rest**: The data volume is encrypted with LUKS/dm-crypt on the Hetzner VPS host. The SQLite file inherits this protection.
 - **In transit**: Not applicable within a single host (SQLite is a file). For remote access (not in MVP), use TLS at the transport layer.
-- **Backups**: The backup file inherits SQLCipher encryption. Store the key separately.
+- **Backups**: Backup files are encrypted (e.g. `age`/`gpg`) before being uploaded to off-host storage. Store the backup encryption key separately.
 
 ### Access Control
 
-- **Application**: Connects with the SQLCipher key. No separate user/role model — SQLite has no built-in RBAC.
+- **Application**: Connects directly to the SQLite file. No separate user/role model — SQLite has no built-in RBAC.
 - **Migrations**: Same connection as the application (no separate migration user).
-- **No superuser**: SQLite has no superuser concept; access is governed by filesystem permissions and the encryption key.
+- **No superuser**: SQLite has no superuser concept; access is governed by filesystem permissions.
 
 ---
 

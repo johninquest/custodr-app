@@ -386,15 +386,15 @@ import (
     "database/sql"
     "testing"
     "github.com/jmoiron/sqlx"
-    _ "github.com/mutecomm/go-sqlcipher"
+    _ "modernc.org/sqlite"
 )
 
 func SetupTestDB(t *testing.T) *sqlx.DB {
     t.Helper()
 
     // Use an in-memory SQLite database for tests
-    dsn := ":memory:?_pragma_key=test-key"
-    db, err := sqlx.Connect("sqlite3", dsn)
+    dsn := ":memory:"
+    db, err := sqlx.Connect("sqlite", dsn)
     if err != nil {
         t.Fatalf("failed to connect to test database: %v", err)
     }

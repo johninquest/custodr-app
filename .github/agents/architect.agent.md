@@ -2,7 +2,7 @@
 name: architect
 description: "Architecture and system design reviewer. Use when reviewing code structure, module organization, abstraction layers, or architectural decisions. Validates adherence to modular monolith patterns and domain-driven design."
 tools: ["read", "search"]
-model: "claude-sonnet-4"
+model: "kimi-k2.6"
 ---
 
 # Architecture Reviewer

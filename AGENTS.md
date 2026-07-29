@@ -18,7 +18,7 @@ Target: German/EU consumers. MVP phase — validating whether users will enter a
 | Frontend | React + TypeScript + Tailwind CSS | Decided |
 | UI Components | shadcn/ui (optional accelerator) | Decided |
 | Backend | Go (Echo) | Decided |
-| Database | SQLite (SQLCipher for encryption at rest) | Decided |
+| Database | SQLite (modernc.org/sqlite, pure Go driver) | Decided |
 | Authentication | Firebase Auth (behind internal interface) | Leaning |
 | Email | Mailjet / Postmark | Leaning |
 | Hosting | Hetzner VPS (EU-based) | Decided |
@@ -95,7 +95,7 @@ SQLite is a file on disk, not a separate service. The database file lives on a m
 2. **No overengineering** — no microservices, CQRS, event sourcing, or Kubernetes during MVP
 3. **No document storage** — structured data only for MVP
 4. **Email deliverability is business-critical** — reminders must be delivered reliably; self-hosted email is ruled out
-5. **SQLite backups from day one** — daily encrypted copies of the database file (SQLCipher already encrypts at rest), stored off-host, with periodic restore testing
+5. **SQLite backups from day one** — daily copies of the database file stored off-host with periodic restore testing. Encryption at rest is handled at the filesystem level (LUKS/dm-crypt on Hetzner VPS); backup files are encrypted (e.g. `age`/`gpg`) before upload
 6. **REST + JSON API** with OpenAPI documentation from early on
 
 ## Agentic Engineering Workflow

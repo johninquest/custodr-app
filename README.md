@@ -16,7 +16,7 @@ Commitment Manager helps German/EU consumers centrally manage all their recurrin
 |-------|--------|
 | Frontend | React + TypeScript + Tailwind CSS |
 | Backend | Go + Echo |
-| Database | SQLite (SQLCipher for encryption at rest) |
+| Database | SQLite (modernc.org/sqlite, pure Go driver) |
 | Authentication | Firebase Auth (behind internal interface) |
 | Email | Mailjet / Postmark |
 | Hosting | Hetzner VPS (EU-based) |

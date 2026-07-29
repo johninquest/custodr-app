@@ -467,7 +467,7 @@ migrate -path migrations -database "sqlite3://<db_path>" version
 
 5. **Enums are `TEXT` with `CHECK` constraints**, not native enum types.
 
-6. **SQLCipher key management.** The encryption key comes from configuration (env var / secret manager), never hardcoded or committed. See `.env.example` for the `DB_KEY` convention.
+6. **Encryption at rest is filesystem-level** (LUKS/dm-crypt on the host volume), not driver-level. The driver is `modernc.org/sqlite` (pure Go, driver name `"sqlite"`). No encryption key is passed to the database connection.
 
 7. **Cross-reference `docs/schema.md`** before writing any migration — it is the source of truth for table/column names, types, and constraints.
 
@@ -723,7 +723,6 @@ query := "SELECT * FROM commitments WHERE user_id = " + userID
 - Not filtering by user_id (security vulnerability)
 - String concatenation in SQL queries (SQL injection)
 - Forgetting `PRAGMA foreign_keys = ON;`
-- Storing the SQLCipher key in code or version control
 
 ## Build and Verification
 

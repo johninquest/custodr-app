@@ -16,7 +16,6 @@ services:
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8080
       - DB_PATH=/data/commitmgr.db
-      - DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY:-}
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
       - FIREBASE_CREDENTIALS_PATH=/app/firebase-service-account.json
       - MAILJET_API_KEY=${MAILJET_API_KEY:-}
