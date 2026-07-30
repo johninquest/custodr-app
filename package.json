@@ -1,5 +1,5 @@
 {
-  "name": "commit-mgr",
+  "name": "custodr-app",
   "version": "0.1.0",
   "private": true,
   "description": "Commitment Management Platform - Track renewals, deadlines, and recurring commitments",

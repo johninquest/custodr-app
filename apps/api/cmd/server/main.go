@@ -9,21 +9,21 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/commit-mgr/api/internal/auth"
-	"github.com/commit-mgr/api/internal/shared/config"
-	"github.com/commit-mgr/api/internal/shared/database"
-	"github.com/commit-mgr/api/internal/shared/logger"
-	appMiddleware "github.com/commit-mgr/api/internal/shared/middleware"
-	"github.com/commit-mgr/api/internal/users"
+	"github.com/custodr-app/api/internal/auth"
+	"github.com/custodr-app/api/internal/shared/config"
+	"github.com/custodr-app/api/internal/shared/database"
+	"github.com/custodr-app/api/internal/shared/logger"
+	appMiddleware "github.com/custodr-app/api/internal/shared/middleware"
+	"github.com/custodr-app/api/internal/users"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
 
 	// Swagger docs (generated)
-	_ "github.com/commit-mgr/api/docs"
+	_ "github.com/custodr-app/api/docs"
 )
 
-// @title Commitment Manager API
+// @title Custodr API
 // @version 1.0
 // @description API for managing recurring commitments and renewal obligations
 // @description

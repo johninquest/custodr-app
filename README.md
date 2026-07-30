@@ -1,4 +1,4 @@
-# Commitment Manager
+# Custodr
 
 A personal digital assistant for managing recurring commitments and renewal obligations — insurance, subscriptions, utilities, telecom, memberships, and more.
 
@@ -6,7 +6,7 @@ A personal digital assistant for managing recurring commitments and renewal obli
 
 ## Overview
 
-Commitment Manager helps German/EU consumers centrally manage all their recurring obligations in one place. Track renewal dates, cancellation deadlines, billing cycles, and costs across every category — from Netflix to electricity contracts to gym memberships.
+Custodr helps German/EU consumers centrally manage all their recurring obligations in one place. Track renewal dates, cancellation deadlines, billing cycles, and costs across every category — from Netflix to electricity contracts to gym memberships.
 
 **Status:** MVP phase — validating whether users will enter and maintain structured commitment data.
 
@@ -62,7 +62,7 @@ Type `/` in Copilot Chat to see available commands:
 ## Project Structure
 
 ```
-commit-mgr/
+custodr-app/
 ├── apps/
 │   ├── api/                     # Go backend (Echo + SQLite)
 │   │   ├── cmd/server/          # Entry point

@@ -1,4 +1,4 @@
-module github.com/commit-mgr/api
+module github.com/custodr-app/api
 
 go 1.25.0
 

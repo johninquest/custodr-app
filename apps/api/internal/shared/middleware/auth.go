@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/commit-mgr/api/internal/auth"
-	"github.com/commit-mgr/api/internal/shared/errors"
+	"github.com/custodr-app/api/internal/auth"
+	"github.com/custodr-app/api/internal/shared/errors"
 	"github.com/labstack/echo/v4"
 )
 

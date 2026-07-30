@@ -3,8 +3,8 @@ package auth
 import (
 	"net/http"
 
-	"github.com/commit-mgr/api/internal/shared/errors"
-	"github.com/commit-mgr/api/internal/users"
+	"github.com/custodr-app/api/internal/shared/errors"
+	"github.com/custodr-app/api/internal/users"
 	"github.com/labstack/echo/v4"
 )
 

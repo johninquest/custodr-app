@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/commit-mgr/api/internal/shared/logger"
+	"github.com/custodr-app/api/internal/shared/logger"
 )
 
 // Worker handles background job processing

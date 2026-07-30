@@ -1,4 +1,4 @@
-# Commitment Manager — Agent Process Rules
+# Custodr — Agent Process Rules
 
 These rules are always on. They describe the fixed loop every feature follows. For the full rationale and architecture, see [AGENTS.md](AGENTS.md).
 

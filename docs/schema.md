@@ -388,10 +388,10 @@ migrations/
 
 ```bash
 # Online backup (safe with concurrent readers/writer)
-sqlite3 /data/commitmgr.db ".backup '/backups/commitmgr_$(date +%Y%m%d).db'"
+sqlite3 /data/custodr.db ".backup '/backups/custodr_$(date +%Y%m%d).db'"
 
 # Or use VACUUM INTO (SQLite 3.27+)
-sqlite3 /data/commitmgr.db "VACUUM INTO '/backups/commitmgr_$(date +%Y%m%d).db'"
+sqlite3 /data/custodr.db "VACUUM INTO '/backups/custodr_$(date +%Y%m%d).db'"
 ```
 
 ### Restore Testing

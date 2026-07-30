@@ -43,7 +43,7 @@ func Load() (*Config, error) {
 		ServerPort: getEnv("SERVER_PORT", "8080"),
 
 		// Database
-		DBPath: getEnv("DB_PATH", "./data/commitmgr.db"),
+		DBPath: getEnv("DB_PATH", "./data/custodr.db"),
 
 		// Firebase
 		FirebaseProjectID:       getEnv("FIREBASE_PROJECT_ID", ""),
@@ -53,7 +53,7 @@ func Load() (*Config, error) {
 		MailjetAPIKey:    getEnv("MAILJET_API_KEY", ""),
 		MailjetAPISecret: getEnv("MAILJET_API_SECRET", ""),
 		MailjetFromEmail: getEnv("MAILJET_FROM_EMAIL", "noreply@example.com"),
-		MailjetFromName:  getEnv("MAILJET_FROM_NAME", "Commitment Manager"),
+		MailjetFromName:  getEnv("MAILJET_FROM_NAME", "Custodr"),
 
 		// Frontend
 		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:5173"),
