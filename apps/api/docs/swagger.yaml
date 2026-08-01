@@ -1,0 +1,161 @@
+basePath: /api/v1
+definitions:
+  auth.LoginRequest:
+    properties:
+      firebase_token:
+        type: string
+    required:
+    - firebase_token
+    type: object
+  auth.LoginResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      user_id:
+        type: string
+    type: object
+  auth.errorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/errors.APIError'
+    type: object
+  errors.APIError:
+    properties:
+      code:
+        type: string
+      details:
+        items:
+          $ref: '#/definitions/errors.ErrorDetail'
+        type: array
+      message:
+        type: string
+    type: object
+  errors.ErrorDetail:
+    properties:
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  users.User:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: |-
+    API for managing recurring commitments and renewal obligations
+
+    All endpoints except /auth/* require a valid Firebase ID token in the Authorization header.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Custodr API
+  version: "1.0"
+paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Exchange Firebase ID token for internal session. Auto-provisions
+        user if first login.
+      parameters:
+      - description: Firebase token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User authenticated successfully
+          schema:
+            $ref: '#/definitions/auth.LoginResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/auth.errorResponse'
+        "401":
+          description: Invalid or expired token
+          schema:
+            $ref: '#/definitions/auth.errorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.errorResponse'
+      summary: Login with Firebase token
+      tags:
+      - Authentication
+  /api/v1/users/me:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently delete the authenticated user's account and all associated
+        data (GDPR right to erasure)
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Account deleted successfully
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.errorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete user account
+      tags:
+      - Users
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the authenticated user's profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile
+          schema:
+            $ref: '#/definitions/users.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.errorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - Users
+securityDefinitions:
+  BearerAuth:
+    description: 'Firebase ID token (format: "Bearer <token>")'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

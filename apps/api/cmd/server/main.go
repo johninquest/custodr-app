@@ -85,6 +85,12 @@ func main() {
 	}))
 
 	// Health check
+	// @Summary Health check
+	// @Description Returns the server health status and current time
+	// @Tags Health
+	// @Produce json
+	// @Success 200 {object} map[string]string "Server is healthy"
+	// @Router /health [get]
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
 			"status": "ok",

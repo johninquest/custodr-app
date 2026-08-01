@@ -165,10 +165,7 @@ CREATE TABLE reminder_preferences (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
 
-  CONSTRAINT reminder_preferences_user_id_unique UNIQUE (user_id),
-  CONSTRAINT reminder_preferences_windows_valid CHECK (
-    reminder_windows IS json AND json_valid(reminder_windows)
-  )
+  CONSTRAINT reminder_preferences_user_id_unique UNIQUE (user_id)
 );
 
 CREATE INDEX idx_reminder_preference_user_id ON reminder_preferences(user_id);
