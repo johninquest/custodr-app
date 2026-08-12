@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { Icon } from '../components/ui/Icon';
 
 function AuthPage() {
   const { user, signInWithGoogle } = useAuth();
@@ -28,27 +29,44 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Custodr
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to manage your commitments
-          </p>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="max-w-sm w-full bg-surface rounded-card border border-border p-8 transition-opacity duration-150">
+        {/* Brand mark */}
+        <div className="flex justify-center">
+          <div className="w-16 h-16 rounded-full bg-primary-subtle flex items-center justify-center">
+            <Icon name="shield" size={40} className="text-primary" />
+          </div>
         </div>
-        <div className="mt-8 space-y-6">
+
+        {/* App name */}
+        <h1 className="mt-4 text-center text-xl font-semibold text-text">
+          Custodr
+        </h1>
+
+        {/* Tagline */}
+        <p className="mt-2 text-center text-sm text-muted">
+          Know what renews, what expires, and when.
+        </p>
+
+        {/* Divider */}
+        <div className="border-t border-border my-8" />
+
+        {/* Auth actions */}
+        <div className="space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div
+              role="alert"
+              className="bg-negative-subtle border border-negative text-negative px-4 py-3 rounded-btn text-sm"
+            >
               {error}
             </div>
           )}
-          
+
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Sign in with Google"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-border rounded-btn text-sm font-medium text-text bg-surface hover:bg-background focus:outline-none focus:border-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-150"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -71,6 +89,11 @@ function AuthPage() {
             {loading ? 'Signing in...' : 'Sign in with Google'}
           </button>
         </div>
+
+        {/* Footer */}
+        <p className="mt-6 text-center text-xs text-muted">
+          By signing in, you agree to our Terms &amp; Privacy Policy
+        </p>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './hooks/useAuth'
+import { AppLayout } from './components/layout/AppLayout'
 import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
 import ProfilePage from './pages/ProfilePage'
@@ -9,10 +10,10 @@ function AppRoutes() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted">Loading...</p>
         </div>
       </div>
     )
@@ -26,13 +27,25 @@ function AppRoutes() {
       <Route
         path="/dashboard"
         element={
-          isAuthenticated ? <DashboardPage /> : <Navigate to="/auth" replace />
+          isAuthenticated ? (
+            <AppLayout>
+              <DashboardPage />
+            </AppLayout>
+          ) : (
+            <Navigate to="/auth" replace />
+          )
         }
       />
       <Route
         path="/profile"
         element={
-          isAuthenticated ? <ProfilePage /> : <Navigate to="/auth" replace />
+          isAuthenticated ? (
+            <AppLayout>
+              <ProfilePage />
+            </AppLayout>
+          ) : (
+            <Navigate to="/auth" replace />
+          )
         }
       />
       <Route

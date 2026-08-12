@@ -7,18 +7,43 @@ export default {
   theme: {
     extend: {
       colors: {
+        background: '#F8F9F4',
+        surface: '#FCFDFA',
+        text: '#202520',
+        muted: 'rgba(32, 37, 32, 0.6)',
+        border: 'rgba(32, 37, 32, 0.12)',
         primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
+          DEFAULT: '#3E7655',
+          subtle: 'rgba(62, 118, 85, 0.10)',
         },
+        positive: {
+          DEFAULT: '#277A55',
+          subtle: 'rgba(39, 122, 85, 0.10)',
+        },
+        negative: {
+          DEFAULT: '#B54B47',
+          subtle: 'rgba(181, 75, 71, 0.10)',
+        },
+      },
+      borderRadius: {
+        'btn': '10px',
+        'card': '12px',
+      },
+      fontFamily: {
+        sans: [
+          'IBM Plex Sans',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'Oxygen',
+          'Ubuntu',
+          'Cantarell',
+          'Fira Sans',
+          'Droid Sans',
+          'Helvetica Neue',
+          'sans-serif',
+        ],
       },
     },
   },
