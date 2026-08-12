@@ -40,7 +40,7 @@ function AuthPage() {
 
         {/* App name */}
         <h1 className="mt-4 text-center text-xl font-semibold text-text">
-          Custodr
+          custodr
         </h1>
 
         {/* Tagline */}

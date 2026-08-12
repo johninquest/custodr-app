@@ -21,7 +21,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Header */}
       <header className="bg-surface border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-text">Custodr</h1>
+          <h1 className="text-xl font-semibold text-text">custodr</h1>
           <div className="w-10 h-10 rounded-full bg-primary-subtle flex items-center justify-center text-primary font-semibold">
             M
           </div>
