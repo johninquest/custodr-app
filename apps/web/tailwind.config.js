@@ -7,22 +7,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#F8F9F4',
-        surface: '#FCFDFA',
-        text: '#202520',
-        muted: 'rgba(32, 37, 32, 0.6)',
-        border: 'rgba(32, 37, 32, 0.12)',
+        background: '#F8F7F4',
+        surface: '#FFFFFF',
+        text: '#1A1A1A',
+        muted: 'rgba(26, 26, 26, 0.6)',
+        border: 'rgba(26, 26, 26, 0.12)',
         primary: {
-          DEFAULT: '#3E7655',
-          subtle: 'rgba(62, 118, 85, 0.10)',
+          DEFAULT: '#0044B3',
+          subtle: '#EBF2FF',
         },
         positive: {
-          DEFAULT: '#277A55',
-          subtle: 'rgba(39, 122, 85, 0.10)',
+          DEFAULT: '#116B3E',
+          subtle: 'rgba(17, 107, 62, 0.10)',
         },
         negative: {
-          DEFAULT: '#B54B47',
-          subtle: 'rgba(181, 75, 71, 0.10)',
+          DEFAULT: '#B01C33',
+          subtle: 'rgba(176, 28, 51, 0.10)',
         },
       },
       borderRadius: {

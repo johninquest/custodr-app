@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Icon } from '../components/ui/Icon';
 
 function AuthPage() {
   const { user, signInWithGoogle } = useAuth();
@@ -34,7 +33,7 @@ function AuthPage() {
         {/* Brand mark */}
         <div className="flex justify-center">
           <div className="w-16 h-16 rounded-full bg-primary-subtle flex items-center justify-center">
-            <Icon name="shield" size={40} className="text-primary" />
+            <img src="/custodr-mark.svg" alt="" width={36} height={36} />
           </div>
         </div>
 
