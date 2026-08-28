@@ -32,16 +32,7 @@ export default {
       fontFamily: {
         sans: [
           'IBM Plex Sans',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          'Segoe UI',
-          'Roboto',
-          'Oxygen',
-          'Ubuntu',
-          'Cantarell',
-          'Fira Sans',
-          'Droid Sans',
-          'Helvetica Neue',
+          'system-ui',
           'sans-serif',
         ],
       },

@@ -213,7 +213,12 @@ Updating contracts first ensures agents generate code that matches the new requi
 ### Monorepo (Turborepo + npm workspaces)
 
 ```bash
-npm run dev          # Start all dev servers
+npm run dev          # Start all dev servers in parallel (API on :8080, Web on :5173)
+npm run dev:api      # Start Go API only (with Air live reload)
+npm run dev:web      # Start React Web only (with Vite)
+npm run stop         # Stop and free all dev ports (8080 & 5173)
+npm run stop:api     # Free port 8080
+npm run stop:web     # Free port 5173
 npm run build        # Build all apps
 npm run test         # Run all tests
 npm run lint         # Lint all apps
@@ -222,23 +227,19 @@ npm run lint         # Lint all apps
 ### Backend (apps/api/)
 
 ```bash
-make run             # Start development server
-make build           # Build binary
-make test            # Run tests with coverage
-make lint            # Run golangci-lint
-make migrate-up      # Run database migrations
-make migrate-down    # Rollback migrations
-make fmt             # Format code (gofmt + goimports)
-make tidy            # Tidy Go modules
+npm run dev --workspace=api      # Start development server (Air live reload)
+npm run build --workspace=api    # Build binary
+npm run test --workspace=api     # Run tests
+npm run lint --workspace=api     # Run golangci-lint
 ```
 
 ### Frontend (apps/web/)
 
 ```bash
-npm run dev          # Start Vite dev server (port 5173)
-npm run build        # Build production bundle
-npm run lint         # Run ESLint
-npm run preview      # Preview production build
+npm run dev --workspace=web      # Start Vite dev server (port 5173)
+npm run build --workspace=web    # Build production bundle
+npm run lint --workspace=web     # Run ESLint
+npm run preview --workspace=web  # Preview production build
 ```
 
 ### Docker

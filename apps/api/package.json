@@ -1,0 +1,14 @@
+{
+  "name": "api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Custodr Go Backend API Workspace",
+  "scripts": {
+    "dev": "air -c .air.toml",
+    "dev:go": "go run ./cmd/server",
+    "build": "go build -o bin/server ./cmd/server",
+    "test": "go test ./...",
+    "lint": "golangci-lint run",
+    "clean": "node -e \"const fs = require('fs'); ['tmp', 'bin'].forEach(d => fs.rmSync(d, {recursive: true, force: true}))\""
+  }
+}

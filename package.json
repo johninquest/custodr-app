@@ -3,29 +3,34 @@
   "version": "0.1.0",
   "private": true,
   "description": "Commitment Management Platform - Track renewals, deadlines, and recurring commitments",
+  "packageManager": "npm@11.16.0",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
     "dev": "turbo run dev",
+    "dev:api": "npm run dev --workspace=api",
+    "dev:web": "npm run dev --workspace=web",
     "build": "turbo run build",
-    "test": "turbo run test",
+    "build:api": "npm run build --workspace=api",
+    "build:web": "npm run build --workspace=web",
     "lint": "turbo run lint",
+    "test": "turbo run test",
     "clean": "turbo run clean",
-    "dev:api": "npm run dev --workspace=apps/api",
-    "dev:web": "npm run dev --workspace=apps/web",
-    "build:api": "npm run build --workspace=apps/api",
-    "build:web": "npm run build --workspace=apps/web"
+    "stop": "node scripts/kill-ports.mjs 8080 5173",
+    "stop:api": "node scripts/kill-ports.mjs 8080",
+    "stop:web": "node scripts/kill-ports.mjs 5173"
   },
   "devDependencies": {
+    "kill-port-process": "^4.0.2",
     "turbo": "^2.0.0"
+  },
+  "dependencies": {
+    "firebase": "^12.16.0"
   },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
-  },
-  "dependencies": {
-    "firebase": "^12.16.0"
   }
 }

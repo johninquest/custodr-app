@@ -1,10 +1,23 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
-  "pipeline": {
+  "globalPassThroughEnv": [
+    "LocalAppData",
+    "LOCALAPPDATA",
+    "APPDATA",
+    "GOCACHE",
+    "GOPATH",
+    "GOROOT",
+    "PATH",
+    "SystemRoot",
+    "TEMP",
+    "TMP",
+    "USERPROFILE"
+  ],
+  "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**", ".next/**", "!.next/cache/**"]
+      "outputs": ["dist/**", "bin/**", "build/**"]
     },
     "lint": {
       "outputs": []

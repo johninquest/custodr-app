@@ -76,7 +76,7 @@ custodr-app/
 │   │   │   └── shared/          # config, database, logger, middleware, errors
 │   │   ├── migrations/          # SQL migration files
 │   │   ├── go.mod
-│   │   ├── Makefile
+│   │   ├── package.json
 │   │   └── Dockerfile
 │   └── web/                     # React frontend (Vite + TypeScript)
 │       ├── src/
@@ -122,13 +122,10 @@ custodr-app/
 **1. Install dependencies:**
 
 ```bash
-# Root (Turborepo)
+# Root (installs node dependencies across all workspaces)
 npm install
 
-# Frontend
-cd apps/web && npm install
-
-# Backend
+# Backend dependencies (if needed)
 cd apps/api && go mod download
 ```
 
@@ -143,17 +140,29 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
 ```
 
-**3. Run development servers:**
+**3. Start development servers:**
 
 ```bash
-# Backend (from apps/api/)
-cd apps/api && make run
+# Start both Backend (Air live reload on :8080) and Frontend (Vite on :5173) in parallel:
+npm run dev
 
-# Frontend (from apps/web/)
-cd apps/web && npm run dev
+# Or start individually:
+npm run dev:api    # Go backend only (with Air live reload)
+npm run dev:web    # React frontend only (with Vite)
 ```
 
-**4. Or use Docker Compose:**
+**4. Stop servers and free ports:**
+
+```bash
+# Frees both dev ports (8080 and 5173) immediately:
+npm run stop
+
+# Or stop individually:
+npm run stop:api   # Frees port 8080
+npm run stop:web   # Frees port 5173
+```
+
+**5. Or use Docker Compose:**
 
 ```bash
 # Production-like
@@ -167,15 +176,17 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start all dev servers (via Turborepo) |
+| `npm run dev` | Start all dev servers in parallel (Turborepo) |
+| `npm run dev:api` | Start Go backend with Air live reload (port 8080) |
+| `npm run dev:web` | Start React Vite dev server (port 5173) |
+| `npm run stop` | Stop and free all dev ports (8080 & 5173) |
+| `npm run stop:api` | Free port 8080 |
+| `npm run stop:web` | Free port 5173 |
 | `npm run build` | Build all apps |
-| `npm run test` | Run all tests |
-| `npm run lint` | Lint all apps |
-| `cd apps/api && make run` | Start Go backend |
-| `cd apps/api && make test` | Run Go tests |
-| `cd apps/api && make migrate-up` | Run database migrations |
-| `cd apps/web && npm run dev` | Start React dev server |
-| `cd apps/web && npm run build` | Build React production bundle |
+| `npm run build:api` | Build Go binary (`apps/api/bin/server`) |
+| `npm run build:web` | Build React production bundle |
+| `npm run test` | Run tests across all workspaces |
+| `npm run lint` | Lint all workspaces |
 
 ## MVP Scope
 
