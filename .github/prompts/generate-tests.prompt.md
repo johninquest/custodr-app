@@ -7,9 +7,33 @@ description: "Generate comprehensive test suites for Go backend or React fronten
 
 Generate tests for `${input:ModuleOrComponent}`.
 
+## Step 0: Fresh-Context Gate (Writer ≠ Reviewer)
+
+**This prompt must be invoked via the `tester` agent in a session that did not author
+the code under test.** If you (the current session) wrote or modified any of the code
+being tested, STOP — do not generate the tests. Instead:
+
+1. Explain the writer ≠ reviewer rule (see
+   `.github/instructions/verification-separation.instructions.md`).
+2. Instruct the user to start a fresh session and re-run `/generate-tests` there,
+   with the `tester` agent selected.
+
+Rationale: an agent testing its own output grades its own exam. Fresh context means
+no inherited assumptions about how the code is *supposed* to work — the tester judges
+against the contract, not against the author's intent.
+
 ## Instructions
 
 You are a test engineering specialist creating comprehensive test suites. Your goal is to achieve high coverage while ensuring tests are meaningful, maintainable, and catch real bugs.
+
+### Testing Against the Contract, Not the Implementation
+
+- Derive expected behavior from `docs/api_spec.md` and `docs/schema.md` — not from
+  reading the implementation and codifying what it does.
+- If the implementation deviates from the contract, the test should fail. Flag the
+  deviation instead of writing a test that blesses the deviation.
+- Only update the contract (and then the test) if the contract itself is wrong — and
+  say so explicitly in the test output.
 
 ### Step 1: Analyze the Code
 

@@ -116,14 +116,19 @@ Contracts are the source of truth. Never invent endpoint or table shapes in code
 Every feature follows the same three-step loop:
 
 1. **Plan** — `/plan-feature`, with `#docs/api_spec.md` and `#docs/schema.md` attached. If the feature touches the contract, update the contract *first* and review the file-by-file plan before any code is written. This gate is the one people skip when rushed — don't.
+
+   **Architecture Gate** — Before planning, check whether the request is an *architectural change* (new domain module under `internal/`, new cross-domain dependency, new external service abstraction, non-additive schema/contract change, new top-level directory). If triggered and the request lacks rationale, **stop and demand justification before planning** — what problem does this solve, why now, what alternatives were considered? If the rationale is weak, push back with simpler alternatives. Accepted changes must be recorded via `/log-architectural-change` (see `docs/architectural-change-logs/`).
+
 2. **Execute** — Run backend and frontend in **separate sessions**, each invoking its own agent (`backend` or `frontend`), each with the plan + relevant contracts attached. Don't let one session sprawl across both stacks.
 3. **Verify** — `/generate-tests`, `/review-pr`, `/check-contract-drift`, plus the `stop` hook enforcing build + test + lint. Nothing is "done" until this passes.
+
+   **Writer ≠ Reviewer**: tests and reviews must run in **separate sessions** from the authoring session — `/generate-tests` via the `tester` agent, `/review-pr` via the `reviewer` agent, each in fresh context. Never test or review your own code. See `.github/instructions/verification-separation.instructions.md`.
 
 ### Custom Agents
 
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|
-| **architect** | Architecture and system design reviewer (read-only) | Reviewing code structure, module organization, abstraction layers, or architectural decisions |
+| **architect** | Architecture and system design reviewer (read-only) | Reviewing code structure, module organization, abstraction layers, or architectural decisions. Also authors and reviews entries in `docs/architectural-change-logs/` |
 | **backend** | Go and Echo backend specialist | Implementing API endpoints, database operations, background jobs, or middleware |
 | **frontend** | React and TypeScript frontend specialist | Building React components, implementing UI features, styling with Tailwind CSS, or integrating with backend API |
 | **tester** | Test generation specialist | Creating unit tests, integration tests, or improving test coverage for Go backend or React frontend |
@@ -141,6 +146,7 @@ Select the appropriate agent from the agent picker in VS Code, or let Copilot de
 | `/generate-tests` | Generate test suites with high coverage (Step 3 of the loop) |
 | `/review-pr` | Perform a comprehensive code review (Step 3 of the loop) |
 | `/check-contract-drift` | Verify implementation matches `api_spec.md` and `schema.md` (Step 3 of the loop) |
+| `/log-architectural-change` | Record an accepted architectural change as an ADR in `docs/architectural-change-logs/` |
 
 ### Skills
 

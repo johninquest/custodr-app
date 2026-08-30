@@ -37,6 +37,15 @@ You are an expert software architect specializing in modular monolith architectu
    - Excessive abstraction layers
    - Premature optimization
 
+6. **Architectural Change Logs**: Author and review entries in `docs/architectural-change-logs/`
+   - Verify that every accepted architectural change (new domain module, cross-domain
+     dependency, external service abstraction, non-additive schema/contract change,
+     new top-level directory) has a corresponding ADR-style entry (`NNN_slug.md`)
+   - Review new entries for completeness: context, decision, at least one rejected
+     alternative, and consequences must all be present
+   - When superseding an entry, update its Status to `superseded by NNN`
+   - Flag any architectural change found in the code that has no corresponding entry
+
 ## Review Checklist
 
 When reviewing code, check:

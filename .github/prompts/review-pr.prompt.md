@@ -7,6 +7,26 @@ description: "Perform a comprehensive code review on a pull request. Checks for 
 
 Review pull request `${input:PRNumber}` (or current changes if no PR number provided).
 
+## Step 0: Fresh-Context Gate (Writer ≠ Reviewer)
+
+**This prompt must be invoked via the `reviewer` agent in a session that did not author
+any of the reviewed files.** If you (the current session) wrote or modified any file
+under review, STOP — do not review. Instead:
+
+1. Explain the writer ≠ reviewer rule (see
+   `.github/instructions/verification-separation.instructions.md`).
+2. Instruct the user to start a fresh session and re-run `/review-pr` there, with the
+   `reviewer` agent selected.
+
+Rationale: a reviewer with inherited assumptions from the authoring session will
+rubber-stamp the author's reasoning. Fresh context makes the review hostile in the
+productive sense — the reviewer judges the code against the contract, not against
+the author's intent.
+
+**Before reviewing any code**: read `docs/api_spec.md` and `docs/schema.md` first.
+Judge every change against the contract. If the code deviates from the contract,
+that is a defect — even if the deviation is internally consistent.
+
 ## Instructions
 
 You are a senior code reviewer performing a thorough review of code changes. Your goal is to ensure code quality, catch bugs, and maintain project standards.

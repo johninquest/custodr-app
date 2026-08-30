@@ -37,6 +37,29 @@ Review the codebase structure and identify:
 - **Database changes**: New tables, columns, indexes, or migrations needed?
 - **API endpoints**: New endpoints or modifications to existing ones?
 
+### Step 3.5: Architecture Gate (Writer's Skeleton Check)
+
+Classify the architectural impact of this feature. It is **architectural** if it involves any of:
+
+- A new domain module under `internal/`
+- A new cross-domain dependency (one domain importing another)
+- A new external service abstraction (new provider interface)
+- A non-additive schema or contract change (column removal/rename, breaking endpoint change)
+- A new top-level directory or package
+
+**If architectural and the request lacks written rationale, STOP.** Do not produce a
+plan. Demand justification first: what problem does this solve, why now, and what
+alternatives were considered? If the provided rationale is weak, push back with
+simpler alternatives — prefer deleting code over adding it, and a narrow fix over a
+refactor. Do not plan an architectural change without written rationale.
+
+**If architectural and rationale is accepted**: note in the plan that the change must
+be recorded via `/log-architectural-change` in `docs/architectural-change-logs/`
+before implementation is considered done.
+
+Routine additions (new endpoint in an existing domain, new column, new UI component,
+ordinary dependencies) are **not** architectural — proceed normally.
+
 ### Step 4: Design the Solution
 
 For each affected area, specify:
