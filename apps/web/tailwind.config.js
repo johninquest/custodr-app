@@ -24,6 +24,17 @@ export default {
           DEFAULT: '#B01C33',
           subtle: 'rgba(176, 28, 51, 0.10)',
         },
+        // Soft, desaturated per-category tints (calm, fit the warm-neutral palette)
+        category: {
+          insurance: { DEFAULT: '#0044B3', subtle: '#EBF2FF' },
+          electricity: { DEFAULT: '#8F7A1A', subtle: '#FAF4DE' },
+          gas: { DEFAULT: '#9C4A2F', subtle: '#F9E9E2' },
+          mobile: { DEFAULT: '#116B3E', subtle: '#E6F2EB' },
+          streaming: { DEFAULT: '#5B4A9E', subtle: '#EFEBF8' },
+          other: { DEFAULT: '#5F5D57', subtle: '#F0EFEB' },
+        },
+        // Muted amber-orange reserved for urgency emphasis (renewals within 7 days)
+        warning: { DEFAULT: '#A85B32', subtle: '#FAEDE4' },
       },
       borderRadius: {
         'btn': '10px',

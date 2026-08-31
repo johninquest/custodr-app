@@ -1,6 +1,6 @@
 import { FC, SVGProps } from 'react';
 
-type IconName = 'home' | 'user' | 'list' | 'bell' | 'settings' | 'logout' | 'calendar' | 'shield' | 'film' | 'wifi' | 'dumbbell' | 'credit-card';
+type IconName = 'home' | 'user' | 'list' | 'bell' | 'settings' | 'logout' | 'calendar' | 'shield' | 'film' | 'zap' | 'smartphone' | 'tag' | 'credit-card';
 
 interface IconProps extends SVGProps<SVGSVGElement> {
   name: IconName;
@@ -173,7 +173,7 @@ const icons: Record<IconName, FC<SVGProps<SVGSVGElement>>> = {
       <path d="M17 16.5h4" />
     </svg>
   ),
-  wifi: (props) => (
+  zap: (props) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="24"
@@ -186,13 +186,10 @@ const icons: Record<IconName, FC<SVGProps<SVGSVGElement>>> = {
       strokeLinejoin="round"
       {...props}
     >
-      <path d="M5 12.55a11 11 0 0 1 14.08 0" />
-      <path d="M1.42 9a16 16 0 0 1 21.16 0" />
-      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
-      <line x1="12" x2="12.01" y1="20" y2="20" />
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
     </svg>
   ),
-  dumbbell: (props) => (
+  smartphone: (props) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="24"
@@ -205,13 +202,25 @@ const icons: Record<IconName, FC<SVGProps<SVGSVGElement>>> = {
       strokeLinejoin="round"
       {...props}
     >
-      <path d="m6.5 6.5 11 11" />
-      <path d="m21 21-1-1" />
-      <path d="m3 3 1 1" />
-      <path d="m18 22 4-4" />
-      <path d="m2 6 4-4" />
-      <path d="m3 10 7-7" />
-      <path d="m14 21 7-7" />
+      <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+      <line x1="12" x2="12.01" y1="18" y2="18" />
+    </svg>
+  ),
+  tag: (props) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
+      <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
     </svg>
   ),
   'credit-card': (props) => (

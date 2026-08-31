@@ -155,7 +155,7 @@ Create a new commitment.
 
 **Validation Rules:**
 - `name`: Required, 1-255 characters
-- `category`: Required, must be one of: `insurance`, `streaming_subscription`, `software_subscription`, `mobile_contract`, `internet_contract`, `electricity_contract`, `gas_contract`, `gym_membership`, `banking_product`, `vehicle_obligation`, `healthcare_reminder`, `vaccination_reminder`, `other`
+- `category`: Required, must be one of: `insurance`, `electricity_contract`, `gas_contract`, `mobile_contract`, `streaming_subscription`, `other`
 - `provider`: Required, 1-255 characters
 - `start_date`: Required, ISO 8601 date (YYYY-MM-DD)
 - `renewal_date`: Required, ISO 8601 date, must be after start_date
@@ -410,12 +410,11 @@ Get dashboard summary data.
     "review_needed": 4
   },
   "commitments_by_category": {
-    "streaming_subscription": 5,
     "insurance": 3,
     "electricity_contract": 2,
     "gas_contract": 1,
     "mobile_contract": 1,
-    "internet_contract": 1,
+    "streaming_subscription": 5,
     "other": 1
   },
   "monthly_cost": {

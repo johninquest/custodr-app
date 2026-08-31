@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/custodr-app/api/internal/shared/ids"
 )
 
 // repository implements Repository interface for user persistence
@@ -65,7 +65,7 @@ func (r *repository) GetByExternalID(ctx context.Context, provider, externalID s
 // Create inserts a new user record
 func (r *repository) Create(ctx context.Context, user *User) error {
 	if user.ID == "" {
-		user.ID = uuid.NewString()
+		user.ID = ids.New()
 	}
 
 	now := time.Now().UTC()

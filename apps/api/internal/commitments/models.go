@@ -5,6 +5,34 @@ import (
 	"time"
 )
 
+// CommitmentCategory values (MVP starter set, see docs/schema.md).
+const (
+	CategoryInsurance             = "insurance"
+	CategoryElectricityContract   = "electricity_contract"
+	CategoryGasContract           = "gas_contract"
+	CategoryMobileContract        = "mobile_contract"
+	CategoryStreamingSubscription = "streaming_subscription"
+	CategoryOther                 = "other"
+)
+
+// validCategories is the authoritative set of category values accepted by the API.
+// Unexported: IsValidCategory is the only intended consumer, and a mutable
+// package-level set must not be modifiable by importing packages.
+var validCategories = map[string]struct{}{
+	CategoryInsurance:             {},
+	CategoryElectricityContract:   {},
+	CategoryGasContract:           {},
+	CategoryMobileContract:        {},
+	CategoryStreamingSubscription: {},
+	CategoryOther:                 {},
+}
+
+// IsValidCategory reports whether the given category is in the MVP starter set.
+func IsValidCategory(category string) bool {
+	_, ok := validCategories[category]
+	return ok
+}
+
 // Commitment represents a recurring commitment
 type Commitment struct {
 	ID                   string     `json:"id"`

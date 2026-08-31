@@ -28,17 +28,10 @@ export interface Commitment {
 
 export type CommitmentCategory =
   | 'insurance'
-  | 'streaming_subscription'
-  | 'software_subscription'
-  | 'mobile_contract'
-  | 'internet_contract'
   | 'electricity_contract'
   | 'gas_contract'
-  | 'gym_membership'
-  | 'banking_product'
-  | 'vehicle_obligation'
-  | 'healthcare_reminder'
-  | 'vaccination_reminder'
+  | 'mobile_contract'
+  | 'streaming_subscription'
   | 'other'
 
 export type BillingFrequency = 'monthly' | 'quarterly' | 'semi_annual' | 'annual'

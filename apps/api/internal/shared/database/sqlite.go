@@ -67,6 +67,19 @@ func Migrate(db *sql.DB, dbPath string) error {
 		migrationsPath = filepath.Join(filepath.Dir(ex), "migrations")
 	}
 
+	// Table-rebuild migrations (e.g. 000006) drop and recreate tables that
+	// other tables reference. With foreign_keys ON, DROP TABLE performs an
+	// implicit DELETE whose ON DELETE CASCADE would wipe referencing rows
+	// (e.g. reminders). PRAGMA foreign_keys is a no-op inside a transaction,
+	// so the migration files cannot toggle it themselves — the runner must
+	// disable it around m.Up() per the SQLite table-rebuild procedure, then
+	// re-enable and verify integrity. The pool is pinned to one connection so
+	// the PRAGMA applies to the same connection that runs the migrations.
+	db.SetMaxOpenConns(1)
+	if _, err := db.Exec("PRAGMA foreign_keys = OFF;"); err != nil {
+		return fmt.Errorf("failed to disable foreign keys for migration: %w", err)
+	}
+
 	// Create migration driver (sqlite package works with modernc.org/sqlite)
 	driver, err := sqlite.WithInstance(db, &sqlite.Config{})
 	if err != nil {
@@ -86,6 +99,22 @@ func Migrate(db *sql.DB, dbPath string) error {
 	// Run migrations
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	// Re-enable FK enforcement and verify the rebuilt schema is consistent.
+	if _, err := db.Exec("PRAGMA foreign_keys = ON;"); err != nil {
+		return fmt.Errorf("failed to re-enable foreign keys after migration: %w", err)
+	}
+	rows, err := db.Query("PRAGMA foreign_key_check;")
+	if err != nil {
+		return fmt.Errorf("failed to run foreign_key_check: %w", err)
+	}
+	defer rows.Close()
+	if rows.Next() {
+		return fmt.Errorf("foreign key violations detected after migration")
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("failed to read foreign_key_check results: %w", err)
 	}
 
 	return nil

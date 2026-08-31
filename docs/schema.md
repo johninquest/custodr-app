@@ -6,7 +6,7 @@ SQLite database schema for the Commitment Management Platform. The driver is `mo
 
 ### SQLite Conventions
 
-- **Primary keys**: `TEXT` storing UUIDs (generated in Go via `uuid.NewString()`). SQLite has no `gen_random_uuid()`.
+- **Primary keys**: `TEXT` storing UUIDv7 values (generated in Go via `uuid.NewV7().String()`). SQLite has no `gen_random_uuid()`. UUIDv7 is time-ordered, which improves index locality for SQLite B-tree inserts compared to random UUIDv4.
 - **Timestamps**: `TEXT` in ISO 8601 UTC (`datetime('now')` produces this). `created_at` set on INSERT, `updated_at` updated in application code (SQLite has no trigger language comparable to PL/pgSQL).
 - **Dates**: `TEXT` in `YYYY-MM-DD` format.
 - **Money**: `INTEGER` cents. Never `REAL` (floating-point precision).
@@ -31,7 +31,9 @@ Values: `monthly`, `quarterly`, `semi_annual`, `annual`
 
 ### commitment_category
 
-Values: `insurance`, `streaming_subscription`, `software_subscription`, `mobile_contract`, `internet_contract`, `electricity_contract`, `gas_contract`, `gym_membership`, `banking_product`, `vehicle_obligation`, `healthcare_reminder`, `vaccination_reminder`, `other`
+Values: `insurance`, `electricity_contract`, `gas_contract`, `mobile_contract`, `streaming_subscription`, `other`
+
+> **MVP scope note:** The starter set focuses on the categories most common to the average German/EU consumer. The following values are reserved for future expansion and were removed from the CHECK constraint in migration `000006`: `software_subscription`, `internet_contract`, `gym_membership`, `banking_product`, `vehicle_obligation`, `healthcare_reminder`, `vaccination_reminder`. Existing rows using removed values are remapped to `other` by the migration.
 
 ### reminder_type
 
@@ -69,7 +71,7 @@ CREATE INDEX idx_users_external_subject_id ON users(external_auth_provider, exte
 ```
 
 **Fields:**
-- `id`: Internal UUID primary key (TEXT, generated in application layer)
+- `id`: Internal UUIDv7 primary key (TEXT, generated in application layer)
 - `external_auth_provider`: Authentication provider (currently always 'firebase')
 - `external_subject_id`: Firebase UID
 - `email`: User email address
@@ -90,10 +92,8 @@ CREATE TABLE commitments (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   category TEXT NOT NULL CHECK (category IN (
-    'insurance', 'streaming_subscription', 'software_subscription',
-    'mobile_contract', 'internet_contract', 'electricity_contract',
-    'gas_contract', 'gym_membership', 'banking_product',
-    'vehicle_obligation', 'healthcare_reminder', 'vaccination_reminder', 'other'
+    'insurance', 'electricity_contract', 'gas_contract',
+    'mobile_contract', 'streaming_subscription', 'other'
   )),
   provider TEXT NOT NULL,
   start_date TEXT NOT NULL,
@@ -127,7 +127,7 @@ CREATE INDEX idx_commitments_cancellation_deadline ON commitments(cancellation_d
 ```
 
 **Fields:**
-- `id`: UUID primary key (TEXT)
+- `id`: UUIDv7 primary key (TEXT)
 - `user_id`: Foreign key to users table
 - `name`: Commitment name (e.g., "Netflix Premium")
 - `category`: Commitment category (TEXT with CHECK constraint)
@@ -172,7 +172,7 @@ CREATE INDEX idx_reminder_preference_user_id ON reminder_preferences(user_id);
 ```
 
 **Fields:**
-- `id`: UUID primary key (TEXT)
+- `id`: UUIDv7 primary key (TEXT)
 - `user_id`: Foreign key to users table (one-to-one relationship)
 - `reminder_windows`: JSON array of days before deadline to send reminders (e.g., `[90, 60, 30, 14, 7, 1]`). Valid values: 1, 7, 14, 30, 60, 90 — enforced in application layer.
 - `email_enabled`: Whether email reminders are enabled (0 or 1)
@@ -212,7 +212,7 @@ CREATE INDEX idx_reminders_status ON reminders(status);
 ```
 
 **Fields:**
-- `id`: UUID primary key (TEXT)
+- `id`: UUIDv7 primary key (TEXT)
 - `commitment_id`: Foreign key to commitments table
 - `reminder_type`: Type of reminder (TEXT with CHECK constraint)
 - `scheduled_date`: Date when reminder should be sent (TEXT, YYYY-MM-DD)
@@ -254,7 +254,7 @@ CREATE INDEX idx_notifications_status ON notifications(status);
 ```
 
 **Fields:**
-- `id`: UUID primary key (TEXT)
+- `id`: UUIDv7 primary key (TEXT)
 - `user_id`: Foreign key to users table
 - `reminder_id`: Foreign key to reminders table (nullable for non-reminder notifications)
 - `notification_type`: Type of notification (e.g., 'email_reminder', 'email_welcome')
