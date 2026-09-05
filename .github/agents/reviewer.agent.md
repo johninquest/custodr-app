@@ -140,6 +140,7 @@ property, not a limitation:
 - [ ] Secrets loaded from environment variables
 - [ ] Secrets not logged or exposed in error messages
 - [ ] .gitignore includes .env files
+- [ ] Agent-authored changes did not create or modify credential files (`.env`, `*.pem`, `*.key`, `*-service-account.json`, `data/*`)
 
 ### Performance
 

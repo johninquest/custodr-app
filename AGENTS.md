@@ -97,6 +97,7 @@ SQLite is a file on disk, not a separate service. The database file lives on a m
 4. **Email deliverability is business-critical** — reminders must be delivered reliably; self-hosted email is ruled out
 5. **SQLite backups from day one** — daily copies of the database file stored off-host with periodic restore testing. Encryption at rest is handled at the filesystem level (LUKS/dm-crypt on Hetzner VPS); backup files are encrypted (e.g. `age`/`gpg`) before upload
 6. **REST + JSON API** with OpenAPI documentation from early on
+7. **Never touch credentials** — coding agents/LLMs must never read or write `.env` files or any file containing secrets (e.g. `firebase-service-account.json`, `*.pem`, `*.key`). The human handles these files; agents stop and ask instead.
 
 ## Agentic Engineering Workflow
 
@@ -261,3 +262,4 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build  # Dev
 - **Firebase Auth lock-in**: Always abstract behind internal interface. GDPR concerns may require migration later.
 - **User input friction**: Commitment entry forms must be fast (< 1 minute per commitment). This is the biggest MVP business risk.
 - **Premature connector frameworks**: Do not build integration abstractions for BiPRO/Open Banking/etc. during MVP.
+- **Agents touching secret files**: Never let a coding agent read or write `.env` files, service-account JSONs, or private keys. Keep credentials human-owned.

@@ -2,6 +2,17 @@
 
 These rules are always on. They describe the fixed loop every feature follows. For the full rationale and architecture, see [AGENTS.md](AGENTS.md).
 
+## Secrets & Credentials — Hands Off
+
+- **Never** create, edit, read-modify, or write any file that contains credentials or secrets.
+  This includes `.env` files, `*.pem`, `*.key`, `*.p12`, `id_rsa*`, `*-service-account.json`
+  (e.g. `apps/api/firebase-service-account.json`), and anything under `data/`.
+- The **user** owns these files. If a task requires changing a secret file, **stop and ask the
+  user to make the change themselves**. You may provide instructions or an example snippet, but
+  you must not touch the file.
+- `.env.example` and similar templates are **not** secret files — you may edit them to document
+  new configuration variables, but never put real values into them.
+
 ## The Fixed Loop
 
 1. **Plan** — Use `/plan-feature`. Attach `#docs/api_spec.md` and `#docs/schema.md`. If the feature touches the contract, **update the contract first** and review the file-by-file plan before any code is written. This gate is the one people skip when rushed — don't.
@@ -46,3 +57,4 @@ These rules are always on. They describe the fixed loop every feature follows. F
 - Prefer deleting code over adding it.
 - Prefer a narrow fix over a refactor.
 - If a hook blocks valid code, narrow the hook — don't disable it wholesale.
+- Never read or write credential files — ask the user to handle `.env`/secrets themselves.
