@@ -13,7 +13,10 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pgpassword}
       - POSTGRES_DB=${POSTGRES_DB:-pgdb}
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      # PostgreSQL 18+ images expect a single mount at /var/lib/postgresql and
+      # place data in a major-version subdirectory. Mounting .../data directly
+      # makes the entrypoint reject the volume. See docker-library/postgres#1259.
+      - postgres-data:/var/lib/postgresql
     networks:
       - custodr-app-network
     healthcheck:
