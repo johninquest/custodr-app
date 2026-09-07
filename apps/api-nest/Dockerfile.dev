@@ -1,0 +1,19 @@
+# ============================================
+# Development Dockerfile for the NestJS API
+# Runs `nest start --watch` for hot reload
+# ============================================
+FROM node:24-alpine3.24
+
+WORKDIR /app
+
+# Copy manifests first for better layer caching
+COPY package.json package-lock.json* ./
+COPY apps/api-nest/package.json ./apps/api-nest/
+
+RUN npm ci --workspace=api-nest --include-workspace-root
+
+# Expose the application port
+EXPOSE 8080
+
+# Start in watch mode; source is bind-mounted by docker-compose.dev.yml
+CMD ["npm", "run", "dev", "--workspace=api-nest"]

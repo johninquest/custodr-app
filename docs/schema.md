@@ -2,11 +2,16 @@
 
 ## Overview
 
-PostgreSQL 18 schema for the Contract Management Platform. The driver is `github.com/jackc/pgx/v5`; encryption at rest is handled at the filesystem level (LUKS/dm-crypt). All tables use `UUID` primary keys generated in the application layer (UUIDv7), and include audit timestamps stored as `TIMESTAMPTZ` in UTC.
+PostgreSQL 18 schema for the Contract Management Platform. The application accesses it through Drizzle ORM over the `pg` (node-postgres) driver; encryption at rest is handled at the filesystem level (LUKS/dm-crypt). All tables use `UUID` primary keys generated in the application layer (UUIDv7), and include audit timestamps stored as `TIMESTAMPTZ` in UTC.
+
+> **Stack note:** this schema is stack-neutral and is the source of truth for both the
+> archived Go implementation (`apps/api-legacy`, tagged `go-legacy`) and the current
+> NestJS implementation (`apps/api-nest`). See
+> [ADR 002](../architectural-change-logs/002_go_to_nestjs_migration.md).
 
 ### PostgreSQL Conventions
 
-- **Primary keys**: `UUID` storing UUIDv7 values (generated in Go via `uuid.NewV7()`). UUIDv7 is time-ordered, which improves B-tree index locality compared to random UUIDv4.
+- **Primary keys**: `UUID` storing UUIDv7 values (generated in the application layer). UUIDv7 is time-ordered, which improves B-tree index locality compared to random UUIDv4.
 - **Timestamps**: `TIMESTAMPTZ` in UTC. `created_at` set on INSERT, `updated_at` updated in application code on every UPDATE.
 - **Dates**: `DATE` in `YYYY-MM-DD` form.
 - **Money**: `INTEGER` cents. Never `REAL`/`DOUBLE PRECISION` (floating-point precision).
@@ -462,39 +467,46 @@ PostgreSQL supports partial indexes with `WHERE` clauses. Use `WHERE deleted_at 
 
 ### Migration Tool
 
-Use `golang-migrate` with the `pgx` PostgreSQL driver (`github.com/golang-migrate/migrate/v4/database/pgx`).
+Use **`drizzle-kit`** to generate and apply migrations against the Drizzle schema
+definitions in `apps/api-nest/src/db/schema/`.
+
+The Drizzle schema files are the source of truth for table structure; `drizzle-kit`
+generates the SQL. Because no production data existed at the time of the NestJS
+migration, the history was **reset to a single fresh baseline** rather than
+replaying the eight Go-era migration steps (see ADR 002, decision 7).
+
+```bash
+npm run db:generate --workspace=api-nest   # generate SQL from schema changes
+npm run db:migrate  --workspace=api-nest   # apply pending migrations
+```
 
 ### Migration File Naming
 
+`drizzle-kit` manages naming. Generated files live in `apps/api-nest/drizzle/`:
+
 ```
-migrations/
-├── 000001_create_users.up.sql
-├── 000001_create_users.down.sql
-├── 000002_create_contracts.up.sql
-├── 000002_create_contracts.down.sql
-├── 000003_create_contract_shares.up.sql
-├── 000003_create_contract_shares.down.sql
-├── 000004_create_reminder_preferences.up.sql
-├── 000004_create_reminder_preferences.down.sql
-├── 000005_create_reminders.up.sql
-├── 000005_create_reminders.down.sql
-├── 000006_create_consents.up.sql
-├── 000006_create_consents.down.sql
-├── 000007_create_notifications.up.sql
-├── 000007_create_notifications.down.sql
-├── 000008_create_audit_logs.up.sql
-└── 000008_create_audit_logs.down.sql
+drizzle/
+├── 0000_<slug>.sql
+├── 0001_<slug>.sql
+└── meta/
+    ├── _journal.json
+    └── 0000_snapshot.json
 ```
 
 ### Migration Rules
 
-1. **Always reversible**: Every `.up.sql` must have a corresponding `.down.sql`
+1. **Always reversible**: `drizzle-kit generate` emits both up and down SQL. Review
+   the generated down migration before applying — Drizzle cannot always infer a safe
+   inverse for destructive changes (column drops, type narrowing).
 2. **Never drop columns in same release as code removal**:
    - Release 1: Remove code that uses column
    - Release 2: Drop column in migration
-3. **Test rollback**: Always test `.down.sql` migrations before deploying
+3. **Test rollback**: Always test the down migration before deploying
 4. **Backfill data**: When adding non-nullable columns, provide default values or backfill existing rows
 5. **Foreign keys**: PostgreSQL enforces foreign keys automatically — no per-connection PRAGMA is needed.
+6. **Edit the Drizzle schema, not the generated SQL**: generated files under
+   `drizzle/` are committed but must not be hand-edited; change
+   `src/db/schema/*.ts` and regenerate.
 
 ---
 

@@ -11,13 +11,17 @@
   "scripts": {
     "dev": "turbo run dev",
     "dev:api": "npm run dev --workspace=api",
+    "dev:api-nest": "npm run dev --workspace=api-nest",
     "dev:web": "npm run dev --workspace=web",
     "build": "turbo run build",
     "build:api": "npm run build --workspace=api",
+    "build:api-nest": "npm run build --workspace=api-nest",
     "build:web": "npm run build --workspace=web",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "clean": "turbo run clean",
+    "db:generate": "npm run db:generate --workspace=api-nest",
+    "db:migrate": "npm run db:migrate --workspace=api-nest",
     "stop": "node scripts/kill-ports.mjs 8080 5173",
     "stop:api": "node scripts/kill-ports.mjs 8080",
     "stop:web": "node scripts/kill-ports.mjs 5173"
@@ -30,7 +34,7 @@
     "firebase": "^12.16.0"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.19.0",
     "npm": ">=9.0.0"
   }
 }
