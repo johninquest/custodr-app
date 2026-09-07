@@ -112,6 +112,85 @@ func (h *Handler) DeleteAccount(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// ListConsents godoc
+// @Summary List consents
+// @Description Retrieve the authenticated user's consent records
+// @Tags Users
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string][]users.Consent
+// @Failure 401 {object} errorResponse
+// @Router /api/v1/users/me/consents [get]
+func (h *Handler) ListConsents(c echo.Context) error {
+	userID := c.Get("user_id").(string)
+
+	consents, err := h.userService.ListConsents(c.Request().Context(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{
+			Error: errors.NewInternalError("failed to retrieve consents"),
+		})
+	}
+	return c.JSON(http.StatusOK, map[string][]users.Consent{"data": consents})
+}
+
+// GrantConsent godoc
+// @Summary Grant consent
+// @Description Record a new consent grant (Einwilligungserklärung)
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body users.GrantConsentRequest true "Consent"
+// @Success 201 {object} users.Consent
+// @Failure 400 {object} errorResponse
+// @Failure 401 {object} errorResponse
+// @Router /api/v1/users/me/consents [post]
+func (h *Handler) GrantConsent(c echo.Context) error {
+	userID := c.Get("user_id").(string)
+
+	var req users.GrantConsentRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, errorResponse{
+			Error: errors.NewValidationError("invalid request body", nil),
+		})
+	}
+
+	consent, err := h.userService.GrantConsent(c.Request().Context(), userID, &req)
+	if err != nil {
+		if apiErr, ok := err.(*errors.APIError); ok {
+			return c.JSON(apiErr.HTTPStatus(), errorResponse{Error: apiErr})
+		}
+		return c.JSON(http.StatusInternalServerError, errorResponse{
+			Error: errors.NewInternalError("failed to grant consent"),
+		})
+	}
+	return c.JSON(http.StatusCreated, consent)
+}
+
+// WithdrawConsent godoc
+// @Summary Withdraw consent
+// @Description Withdraw consent of a given type (record retained for audit)
+// @Tags Users
+// @Produce json
+// @Security BearerAuth
+// @Param type path string true "Consent type"
+// @Success 204 "No Content"
+// @Failure 404 {object} errorResponse
+// @Router /api/v1/users/me/consents/{type} [delete]
+func (h *Handler) WithdrawConsent(c echo.Context) error {
+	userID := c.Get("user_id").(string)
+
+	if err := h.userService.WithdrawConsent(c.Request().Context(), userID, c.Param("type")); err != nil {
+		if apiErr, ok := err.(*errors.APIError); ok {
+			return c.JSON(apiErr.HTTPStatus(), errorResponse{Error: apiErr})
+		}
+		return c.JSON(http.StatusInternalServerError, errorResponse{
+			Error: errors.NewInternalError("failed to withdraw consent"),
+		})
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
 // errorResponse wraps API errors in the standard response format
 type errorResponse struct {
 	Error *errors.APIError `json:"error"`

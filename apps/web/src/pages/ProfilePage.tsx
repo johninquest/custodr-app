@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Icon } from '../components/ui/Icon';
+import { consentsApi } from '../services/api';
 
 // Dummy settings data (to be replaced with backend API in future)
 const dummySettings = {
@@ -20,6 +22,31 @@ const formatDate = (dateString: string): string => {
 
 function ProfilePage() {
   const { user, signOutUser } = useAuth();
+  const [consentActive, setConsentActive] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    consentsApi
+      .list()
+      .then((records) => {
+        const active = records.some((r) => r.consent_type === 'email_notifications' && !r.withdrawn_at);
+        setConsentActive(active);
+      })
+      .catch(() => setConsentActive(null));
+  }, []);
+
+  const toggleConsent = async () => {
+    try {
+      if (consentActive) {
+        await consentsApi.withdraw('email_notifications');
+        setConsentActive(false);
+      } else {
+        await consentsApi.grant('email_notifications', new Date().toISOString().slice(0, 10));
+        setConsentActive(true);
+      }
+    } catch (error) {
+      console.error('Error updating consent:', error);
+    }
+  };
 
   // Extract user info from Firebase User object with empty string fallbacks
   const userInfo = {
@@ -72,16 +99,28 @@ function ProfilePage() {
       <div>
         <h3 className="text-lg font-semibold text-text mb-4">Settings</h3>
         <div className="bg-surface rounded-card border border-border overflow-hidden">
-          {/* Notification Preferences */}
+          {/* Notification Preferences (Consent / Einwilligung) */}
           <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
                 <Icon name="bell" size={20} className="text-muted" />
                 <p className="font-medium text-text">Email Notifications</p>
               </div>
-              <div className="w-11 h-6 bg-positive rounded-full relative">
-                <div className="absolute right-1 top-1 w-4 h-4 bg-surface rounded-full"></div>
-              </div>
+              <button
+                type="button"
+                onClick={toggleConsent}
+                role="switch"
+                aria-checked={consentActive === true}
+                className={`w-11 h-6 rounded-full relative transition-colors duration-150 ${
+                  consentActive === true ? 'bg-positive' : 'bg-muted/30'
+                }`}
+              >
+                <div
+                  className={`absolute top-1 w-4 h-4 bg-surface rounded-full transition-all duration-150 ${
+                    consentActive === true ? 'right-1' : 'left-1'
+                  }`}
+                />
+              </button>
             </div>
             <p className="text-sm text-muted ml-8">
               Receive reminder emails before renewals

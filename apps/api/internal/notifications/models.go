@@ -27,5 +27,5 @@ type EmailProvider interface {
 
 // Service handles notification business logic
 type Service interface {
-	SendReminderEmail(ctx context.Context, userID, commitmentID, reminderType string, scheduledDate time.Time) error
+	SendReminderEmail(ctx context.Context, userID, contractID, reminderType string, scheduledDate time.Time) error
 }

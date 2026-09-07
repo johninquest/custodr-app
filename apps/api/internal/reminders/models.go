@@ -8,7 +8,7 @@ import (
 // Reminder represents a scheduled reminder
 type Reminder struct {
 	ID            string     `json:"id"`
-	CommitmentID  string     `json:"commitment_id"`
+	ContractID    string     `json:"contract_id"`
 	ReminderType  string     `json:"reminder_type"`
 	ScheduledDate time.Time  `json:"scheduled_date"`
 	SentAt        *time.Time `json:"sent_at,omitempty"`

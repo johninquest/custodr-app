@@ -13,7 +13,7 @@ type Config struct {
 	ServerPort string
 
 	// Database
-	DBPath string
+	DatabaseURL string
 
 	// Firebase
 	FirebaseProjectID       string
@@ -43,7 +43,7 @@ func Load() (*Config, error) {
 		ServerPort: getEnv("SERVER_PORT", "8080"),
 
 		// Database
-		DBPath: getEnv("DB_PATH", "./data/custodr.db"),
+		DatabaseURL: getEnv("DATABASE_URL", "postgres://pguser:pgpassword@localhost:5432/pgdb?sslmode=disable"),
 
 		// Firebase
 		FirebaseProjectID:       getEnv("FIREBASE_PROJECT_ID", ""),

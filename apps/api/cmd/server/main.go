@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/custodr-app/api/internal/auth"
+	"github.com/custodr-app/api/internal/contracts"
 	"github.com/custodr-app/api/internal/shared/config"
 	"github.com/custodr-app/api/internal/shared/database"
 	"github.com/custodr-app/api/internal/shared/logger"
@@ -25,7 +26,7 @@ import (
 
 // @title Custodr API
 // @version 1.0
-// @description API for managing recurring commitments and renewal obligations
+// @description API for managing recurring contracts and renewal obligations
 // @description
 // @description All endpoints except /auth/* require a valid Firebase ID token in the Authorization header.
 
@@ -60,14 +61,14 @@ func main() {
 	defer log.Sync()
 
 	// Initialize database
-	db, err := database.New(cfg.DBPath)
+	db, err := database.New(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatal("Failed to initialize database", "error", err)
 	}
 	defer db.Close()
 
 	// Run migrations
-	if err := database.Migrate(db, cfg.DBPath); err != nil {
+	if err := database.Migrate(db); err != nil {
 		log.Fatal("Failed to run migrations", "error", err)
 	}
 
@@ -118,12 +119,16 @@ func main() {
 	// Initialize repositories and services
 	authRepo := auth.NewRepository(db)
 	usersRepo := users.NewRepository(db)
+	contractsRepo := contracts.NewRepository(db)
 
 	var authHandler *auth.Handler
 	if tokenVerifier != nil {
 		authService := auth.NewService(authRepo, tokenVerifier)
 		usersService := users.NewService(usersRepo)
 		authHandler = auth.NewHandler(authService, usersService)
+
+		contractsService := contracts.NewService(contractsRepo)
+		contractsHandler := contracts.NewHandler(contractsService)
 
 		// API routes
 		api := e.Group("/api/v1")
@@ -136,6 +141,11 @@ func main() {
 		protected.Use(appMiddleware.AuthMiddleware(tokenVerifier, authRepo))
 		protected.GET("/users/me", authHandler.GetProfile)
 		protected.DELETE("/users/me", authHandler.DeleteAccount)
+		protected.GET("/users/me/consents", authHandler.ListConsents)
+		protected.POST("/users/me/consents", authHandler.GrantConsent)
+		protected.DELETE("/users/me/consents/:type", authHandler.WithdrawConsent)
+
+		contractsHandler.RegisterRoutes(protected)
 
 		log.Info("Authentication routes registered")
 	} else {

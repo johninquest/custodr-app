@@ -1,45 +1,49 @@
 basePath: /api/v1
 definitions:
-  auth.LoginRequest:
-    properties:
-      firebase_token:
-        type: string
-    required:
-    - firebase_token
-    type: object
-  auth.LoginResponse:
-    properties:
-      created_at:
-        type: string
-      email:
-        type: string
-      user_id:
-        type: string
-    type: object
-  auth.errorResponse:
-    properties:
-      error:
-        $ref: '#/definitions/errors.APIError'
-    type: object
-  errors.APIError:
+  github_com_custodr-app_api_internal_shared_errors.APIError:
     properties:
       code:
         type: string
       details:
         items:
-          $ref: '#/definitions/errors.ErrorDetail'
+          $ref: '#/definitions/github_com_custodr-app_api_internal_shared_errors.ErrorDetail'
         type: array
       message:
         type: string
     type: object
-  errors.ErrorDetail:
+  github_com_custodr-app_api_internal_shared_errors.ErrorDetail:
     properties:
       field:
         type: string
       message:
         type: string
     type: object
-  users.User:
+  github_com_custodr-app_api_internal_users.Consent:
+    properties:
+      consent_type:
+        type: string
+      granted_at:
+        type: string
+      id:
+        type: string
+      user_id:
+        type: string
+      version:
+        type: string
+      withdrawn_at:
+        type: string
+    type: object
+  github_com_custodr-app_api_internal_users.GrantConsentRequest:
+    properties:
+      consent_type:
+        type: string
+      version:
+        type: string
+    required:
+    - consent_type
+    - version
+    type: object
+  github_com_custodr-app_api_internal_users.User:
     properties:
       created_at:
         type: string
@@ -51,8 +55,223 @@ definitions:
         type: boolean
       id:
         type: string
+      name:
+        type: string
       updated_at:
         type: string
+    type: object
+  internal_auth.LoginRequest:
+    properties:
+      firebase_token:
+        type: string
+    required:
+    - firebase_token
+    type: object
+  internal_auth.LoginResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      user_id:
+        type: string
+    type: object
+  internal_auth.errorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/github_com_custodr-app_api_internal_shared_errors.APIError'
+    type: object
+  internal_contracts.AuditEntry:
+    properties:
+      action:
+        type: string
+      actor_user_id:
+        type: string
+      after_value:
+        type: string
+      before_value:
+        type: string
+      created_at:
+        type: string
+      entity_id:
+        type: string
+      entity_type:
+        type: string
+      field:
+        type: string
+      id:
+        type: string
+    type: object
+  internal_contracts.AuditListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_contracts.AuditEntry'
+        type: array
+      pagination:
+        $ref: '#/definitions/internal_contracts.Pagination'
+    type: object
+  internal_contracts.Contract:
+    properties:
+      billing_frequency:
+        type: string
+      cancellation_deadline:
+        type: string
+      category:
+        type: string
+      cost:
+        description: Decimal in API, stored as cents in DB
+        type: number
+      created_at:
+        type: string
+      currency:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      notes:
+        type: string
+      provider:
+        type: string
+      renewal_date:
+        type: string
+      start_date:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  internal_contracts.CreateRequest:
+    properties:
+      billing_frequency:
+        type: string
+      cancellation_deadline:
+        type: string
+      category:
+        type: string
+      cost:
+        type: number
+      currency:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      notes:
+        maxLength: 1000
+        type: string
+      provider:
+        maxLength: 255
+        minLength: 1
+        type: string
+      renewal_date:
+        type: string
+      start_date:
+        type: string
+    required:
+    - billing_frequency
+    - category
+    - cost
+    - currency
+    - name
+    - provider
+    - renewal_date
+    - start_date
+    type: object
+  internal_contracts.CreateShareRequest:
+    properties:
+      grantee_email:
+        type: string
+    required:
+    - grantee_email
+    type: object
+  internal_contracts.ListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_contracts.Contract'
+        type: array
+      pagination:
+        $ref: '#/definitions/internal_contracts.Pagination'
+    type: object
+  internal_contracts.Pagination:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  internal_contracts.Share:
+    properties:
+      contract_id:
+        type: string
+      granted_at:
+        type: string
+      granted_by:
+        type: string
+      grantee_email:
+        type: string
+      id:
+        type: string
+      revoked_at:
+        type: string
+      role:
+        type: string
+    type: object
+  internal_contracts.UpdateRequest:
+    properties:
+      billing_frequency:
+        type: string
+      cancellation_deadline:
+        type: string
+      category:
+        type: string
+      cost:
+        type: number
+      currency:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      notes:
+        maxLength: 1000
+        type: string
+      provider:
+        maxLength: 255
+        minLength: 1
+        type: string
+      renewal_date:
+        type: string
+      start_date:
+        type: string
+      status:
+        type: string
+    required:
+    - billing_frequency
+    - category
+    - cost
+    - currency
+    - name
+    - provider
+    - renewal_date
+    - start_date
+    - status
+    type: object
+  internal_contracts.errorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/github_com_custodr-app_api_internal_shared_errors.APIError'
     type: object
 host: localhost:8080
 info:
@@ -60,7 +279,7 @@ info:
     email: support@example.com
     name: API Support
   description: |-
-    API for managing recurring commitments and renewal obligations
+    API for managing recurring contracts and renewal obligations
 
     All endpoints except /auth/* require a valid Firebase ID token in the Authorization header.
   license:
@@ -81,29 +300,309 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.LoginRequest'
+          $ref: '#/definitions/internal_auth.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: User authenticated successfully
           schema:
-            $ref: '#/definitions/auth.LoginResponse'
+            $ref: '#/definitions/internal_auth.LoginResponse'
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/auth.errorResponse'
+            $ref: '#/definitions/internal_auth.errorResponse'
         "401":
           description: Invalid or expired token
           schema:
-            $ref: '#/definitions/auth.errorResponse'
+            $ref: '#/definitions/internal_auth.errorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/auth.errorResponse'
+            $ref: '#/definitions/internal_auth.errorResponse'
       summary: Login with Firebase token
       tags:
       - Authentication
+  /api/v1/contracts:
+    get:
+      consumes:
+      - application/json
+      description: List contracts visible to the authenticated user (owned + shared)
+      parameters:
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Filter by category
+        in: query
+        name: category
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_contracts.ListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_contracts.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: List contracts
+      tags:
+      - Contracts
+    post:
+      consumes:
+      - application/json
+      description: Create a new contract
+      parameters:
+      - description: Contract
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_contracts.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_contracts.Contract'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_contracts.errorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_contracts.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a contract
+      tags:
+      - Contracts
+  /api/v1/contracts/{id}:
+    delete:
+      description: Soft-delete a contract owned by the authenticated user
+      parameters:
+      - description: Contract ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_contracts.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a contract
+      tags:
+      - Contracts
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single contract (owned or shared)
+      parameters:
+      - description: Contract ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_contracts.Contract'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_contracts.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_contracts.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a contract
+      tags:
+      - Contracts
+    put:
+      consumes:
+      - application/json
+      description: Update a contract owned by the authenticated user
+      parameters:
+      - description: Contract ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Contract
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_contracts.UpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_contracts.Contract'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_contracts.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_contracts.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a contract
+      tags:
+      - Contracts
+  /api/v1/contracts/{id}/audit:
+    get:
+      description: Get the activity feed for a contract (owner or grantee)
+      parameters:
+      - description: Contract ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_contracts.AuditListResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_contracts.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: List activity
+      tags:
+      - Contracts
+  /api/v1/contracts/{id}/shares:
+    get:
+      description: List active shares for a contract (owner only)
+      parameters:
+      - description: Contract ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/internal_contracts.Share'
+              type: array
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_contracts.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: List shares
+      tags:
+      - Contracts
+    post:
+      consumes:
+      - application/json
+      description: Grant read-only access to a contract by email (owner only)
+      parameters:
+      - description: Contract ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Share
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_contracts.CreateShareRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_contracts.Share'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_contracts.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Grant access
+      tags:
+      - Contracts
+  /api/v1/contracts/{id}/shares/{shareId}:
+    delete:
+      description: Revoke a share (owner only)
+      parameters:
+      - description: Contract ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Share ID
+        in: path
+        name: shareId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_contracts.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Revoke access
+      tags:
+      - Contracts
   /api/v1/users/me:
     delete:
       consumes:
@@ -118,11 +617,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/auth.errorResponse'
+            $ref: '#/definitions/internal_auth.errorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/auth.errorResponse'
+            $ref: '#/definitions/internal_auth.errorResponse'
       security:
       - BearerAuth: []
       summary: Delete user account
@@ -138,18 +637,95 @@ paths:
         "200":
           description: User profile
           schema:
-            $ref: '#/definitions/users.User'
+            $ref: '#/definitions/github_com_custodr-app_api_internal_users.User'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/auth.errorResponse'
+            $ref: '#/definitions/internal_auth.errorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/auth.errorResponse'
+            $ref: '#/definitions/internal_auth.errorResponse'
       security:
       - BearerAuth: []
       summary: Get current user profile
+      tags:
+      - Users
+  /api/v1/users/me/consents:
+    get:
+      description: Retrieve the authenticated user's consent records
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/github_com_custodr-app_api_internal_users.Consent'
+              type: array
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_auth.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: List consents
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Record a new consent grant (Einwilligungserklärung)
+      parameters:
+      - description: Consent
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_custodr-app_api_internal_users.GrantConsentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_custodr-app_api_internal_users.Consent'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_auth.errorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_auth.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Grant consent
+      tags:
+      - Users
+  /api/v1/users/me/consents/{type}:
+    delete:
+      description: Withdraw consent of a given type (record retained for audit)
+      parameters:
+      - description: Consent type
+        in: path
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_auth.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Withdraw consent
       tags:
       - Users
 securityDefinitions:

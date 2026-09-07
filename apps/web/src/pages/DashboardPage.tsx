@@ -1,8 +1,8 @@
 import { Icon } from '../components/ui/Icon';
-import { Commitment, CommitmentCategory } from '../types';
+import { Contract, ContractCategory } from '../types';
 
 // Dummy data for demonstration
-const dummyCommitments: Commitment[] = [
+const dummyContracts: Contract[] = [
   {
     id: '1',
     user_id: 'user123',
@@ -102,7 +102,7 @@ interface CategoryStyle {
   text: string;
 }
 
-const categoryStyles: Record<CommitmentCategory, CategoryStyle> = {
+const categoryStyles: Record<ContractCategory, CategoryStyle> = {
   insurance: {
     icon: 'shield',
     label: 'Insurance',
@@ -141,11 +141,11 @@ const categoryStyles: Record<CommitmentCategory, CategoryStyle> = {
   },
 };
 
-const getCategoryStyle = (category: CommitmentCategory): CategoryStyle =>
+const getCategoryStyle = (category: ContractCategory): CategoryStyle =>
   categoryStyles[category] ?? categoryStyles.other;
 
 /** Icon in a tinted circle — the shared category visual identity. */
-function CategoryBadge({ category }: { category: CommitmentCategory }) {
+function CategoryBadge({ category }: { category: ContractCategory }) {
   const style = getCategoryStyle(category);
   return (
     <div
@@ -161,8 +161,8 @@ function CategoryBadge({ category }: { category: CommitmentCategory }) {
 // Status helpers
 // ---------------------------------------------------------------------------
 
-const getStatusColor = (status: Commitment['status']): string => {
-  const colorMap: Record<Commitment['status'], string> = {
+const getStatusColor = (status: Contract['status']): string => {
+  const colorMap: Record<Contract['status'], string> = {
     active: 'bg-positive-subtle text-positive',
     cancelled: 'bg-negative-subtle text-negative',
     expired: 'bg-muted/10 text-muted',
@@ -172,8 +172,8 @@ const getStatusColor = (status: Commitment['status']): string => {
   return colorMap[status];
 };
 
-const getStatusLabel = (status: Commitment['status']): string => {
-  const labelMap: Record<Commitment['status'], string> = {
+const getStatusLabel = (status: Contract['status']): string => {
+  const labelMap: Record<Contract['status'], string> = {
     active: 'Active',
     cancelled: 'Cancelled',
     expired: 'Expired',
@@ -215,18 +215,18 @@ const getDaysUntil = (dateString: string): number => {
 };
 
 /** Normalize any billing frequency to a monthly amount. */
-const getMonthlyCost = (commitment: Commitment): number => {
-  switch (commitment.billing_frequency) {
+const getMonthlyCost = (contract: Contract): number => {
+  switch (contract.billing_frequency) {
     case 'monthly':
-      return commitment.cost;
+      return contract.cost;
     case 'quarterly':
-      return commitment.cost / 3;
+      return contract.cost / 3;
     case 'semi_annual':
-      return commitment.cost / 6;
+      return contract.cost / 6;
     case 'annual':
-      return commitment.cost / 12;
+      return contract.cost / 12;
     default:
-      return commitment.cost;
+      return contract.cost;
   }
 };
 
@@ -290,7 +290,7 @@ function EmptyState() {
       >
         <Icon name="list" size={26} className="text-primary" />
       </div>
-      <h3 className="text-lg font-semibold text-text mb-1">No commitments yet</h3>
+      <h3 className="text-lg font-semibold text-text mb-1">No contracts yet</h3>
       <p className="text-sm text-muted max-w-xs mb-5">
         Track your insurance, subscriptions and contracts in one place — never miss a renewal or
         cancellation deadline again.
@@ -300,16 +300,16 @@ function EmptyState() {
         className="inline-flex items-center gap-2 rounded-btn bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors duration-150"
       >
         <Icon name="list" size={18} className="text-white" aria-hidden="true" />
-        Add your first commitment
+        Add your first contract
       </button>
     </Card>
   );
 }
 
 /** Monthly-normalized cost breakdown per category with proportional bars. */
-function CategoryCostBreakdown({ commitments }: { commitments: Commitment[] }) {
-  const byCategory = new Map<CommitmentCategory, number>();
-  for (const c of commitments) {
+function CategoryCostBreakdown({ contracts }: { contracts: Contract[] }) {
+  const byCategory = new Map<ContractCategory, number>();
+  for (const c of contracts) {
     byCategory.set(c.category, (byCategory.get(c.category) ?? 0) + getMonthlyCost(c));
   }
 
@@ -352,56 +352,56 @@ function CategoryCostBreakdown({ commitments }: { commitments: Commitment[] }) {
 // ---------------------------------------------------------------------------
 
 function DashboardPage() {
-  const activeCommitments = dummyCommitments.filter((c) => c.status === 'active');
-  const monthlySpend = activeCommitments.reduce((sum, c) => sum + getMonthlyCost(c), 0);
+  const activeContracts = dummyContracts.filter((c) => c.status === 'active');
+  const monthlySpend = activeContracts.reduce((sum, c) => sum + getMonthlyCost(c), 0);
 
-  const upcomingRenewals = dummyCommitments
-    .map((c) => ({ commitment: c, days: getDaysUntil(c.renewal_date) }))
+  const upcomingRenewals = dummyContracts
+    .map((c) => ({ contract: c, days: getDaysUntil(c.renewal_date) }))
     .filter(({ days }) => days > 0 && days <= 30)
     .sort((a, b) => a.days - b.days)
-    .map(({ commitment }) => commitment);
+    .map(({ contract }) => contract);
 
-  const isEmpty = dummyCommitments.length === 0;
+  const isEmpty = dummyContracts.length === 0;
 
   return (
     <div className="space-y-8">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <SummaryCard label="Active Commitments" value={activeCommitments.length} />
+        <SummaryCard label="Active Contracts" value={activeContracts.length} />
         <SummaryCard label="Monthly Spend" value={formatCurrency(monthlySpend, 'EUR')} />
         <SummaryCard label="Upcoming Renewals" value={upcomingRenewals.length} />
       </div>
 
       {/* Cost breakdown by category */}
-      {!isEmpty && <CategoryCostBreakdown commitments={activeCommitments} />}
+      {!isEmpty && <CategoryCostBreakdown contracts={activeContracts} />}
 
       {/* Upcoming Renewals */}
       {!isEmpty && upcomingRenewals.length > 0 && (
         <div>
           <SectionHeader title="Upcoming Renewals" count={upcomingRenewals.length} />
           <Card className="overflow-hidden">
-            {upcomingRenewals.map((commitment, index) => {
-              const daysUntil = getDaysUntil(commitment.renewal_date);
+            {upcomingRenewals.map((contract, index) => {
+              const daysUntil = getDaysUntil(contract.renewal_date);
               const urgent = daysUntil <= 7;
               return (
                 <div
-                  key={commitment.id}
+                  key={contract.id}
                   className={`p-4 flex items-center gap-4 transition-colors duration-150 hover:bg-muted/5 ${
                     index < upcomingRenewals.length - 1 ? 'border-b border-border' : ''
                   } ${urgent ? 'bg-warning-subtle/50' : ''}`}
                 >
-                  <CategoryBadge category={commitment.category} />
+                  <CategoryBadge category={contract.category} />
 
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-text truncate">{commitment.name}</p>
+                    <p className="font-medium text-text truncate">{contract.name}</p>
                     <p className="text-sm text-muted">
-                      {commitment.provider} • Renews {formatDate(commitment.renewal_date)}
+                      {contract.provider} • Renews {formatDate(contract.renewal_date)}
                     </p>
                   </div>
 
                   <div className="text-right flex-shrink-0 space-y-1">
                     <p className="font-medium text-text">
-                      {formatCurrency(commitment.cost, commitment.currency)}
+                      {formatCurrency(contract.cost, contract.currency)}
                     </p>
                     <RenewalCountdown daysUntil={daysUntil} />
                   </div>
@@ -412,42 +412,42 @@ function DashboardPage() {
         </div>
       )}
 
-      {/* All Commitments */}
+      {/* All Contracts */}
       <div>
-        <SectionHeader title="All Commitments" count={dummyCommitments.length} />
+        <SectionHeader title="All Contracts" count={dummyContracts.length} />
         {isEmpty ? (
           <EmptyState />
         ) : (
           <Card className="overflow-hidden">
-            {dummyCommitments.map((commitment, index) => (
+            {dummyContracts.map((contract, index) => (
               <div
-                key={commitment.id}
+                key={contract.id}
                 className={`p-4 flex items-center gap-4 transition-colors duration-150 hover:bg-muted/5 ${
-                  index < dummyCommitments.length - 1 ? 'border-b border-border' : ''
+                  index < dummyContracts.length - 1 ? 'border-b border-border' : ''
                 }`}
               >
-                <CategoryBadge category={commitment.category} />
+                <CategoryBadge category={contract.category} />
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="font-medium text-text truncate">{commitment.name}</p>
+                    <p className="font-medium text-text truncate">{contract.name}</p>
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(commitment.status)}`}
+                      className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(contract.status)}`}
                     >
-                      {getStatusLabel(commitment.status)}
+                      {getStatusLabel(contract.status)}
                     </span>
                   </div>
                   <p className="text-sm text-muted">
-                    {commitment.provider} • {commitment.billing_frequency}
+                    {contract.provider} • {contract.billing_frequency}
                   </p>
                 </div>
 
                 <div className="text-right flex-shrink-0">
                   <p className="font-medium text-text">
-                    {formatCurrency(commitment.cost, commitment.currency)}
+                    {formatCurrency(contract.cost, contract.currency)}
                   </p>
                   <p className="text-xs text-muted">
-                    {commitment.billing_frequency === 'monthly' ? '/month' : '/year'}
+                    {contract.billing_frequency === 'monthly' ? '/month' : '/year'}
                   </p>
                 </div>
               </div>

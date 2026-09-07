@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/custodr-app/api/internal/shared/ids"
@@ -22,26 +23,25 @@ func NewRepository(db *sql.DB) Repository {
 // GetByExternalID retrieves a user by external auth provider and subject ID
 func (r *repository) GetByExternalID(ctx context.Context, provider, externalID string) (*User, error) {
 	query := `
-		SELECT id, external_auth_provider, external_subject_id, email, email_verified,
+		SELECT id, external_auth_provider, external_subject_id, email, name, email_verified,
 		       created_at, updated_at, deleted_at
 		FROM users
-		WHERE external_auth_provider = ? AND external_subject_id = ? AND deleted_at IS NULL
+		WHERE external_auth_provider = $1 AND external_subject_id = $2 AND deleted_at IS NULL
 	`
 
 	var user User
-	var createdAt, updatedAt string
-	var deletedAt sql.NullString
-	var emailVerified int
+	var name sql.NullString
 
 	err := r.db.QueryRowContext(ctx, query, provider, externalID).Scan(
 		&user.ID,
 		&user.ExternalAuthProvider,
 		&user.ExternalSubjectID,
 		&user.Email,
-		&emailVerified,
-		&createdAt,
-		&updatedAt,
-		&deletedAt,
+		&name,
+		&user.EmailVerified,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&user.DeletedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -51,12 +51,8 @@ func (r *repository) GetByExternalID(ctx context.Context, provider, externalID s
 		return nil, fmt.Errorf("failed to query user by external ID: %w", err)
 	}
 
-	user.EmailVerified = emailVerified == 1
-	user.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
-	user.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
-	if deletedAt.Valid {
-		t, _ := time.Parse(time.RFC3339, deletedAt.String)
-		user.DeletedAt = &t
+	if name.Valid {
+		user.Name = name.String
 	}
 
 	return &user, nil
@@ -72,26 +68,26 @@ func (r *repository) Create(ctx context.Context, user *User) error {
 	user.CreatedAt = now
 	user.UpdatedAt = now
 
+	// Store email lowercase-normalized so identity comparison (e.g. contract
+	// shares) is case-insensitive and deterministic.
+	user.Email = normalizeEmail(user.Email)
+
 	query := `
 		INSERT INTO users (
-			id, external_auth_provider, external_subject_id, email, email_verified,
+			id, external_auth_provider, external_subject_id, email, name, email_verified,
 			created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
-
-	emailVerified := 0
-	if user.EmailVerified {
-		emailVerified = 1
-	}
 
 	_, err := r.db.ExecContext(ctx, query,
 		user.ID,
 		user.ExternalAuthProvider,
 		user.ExternalSubjectID,
 		user.Email,
-		emailVerified,
-		user.CreatedAt.Format(time.RFC3339),
-		user.UpdatedAt.Format(time.RFC3339),
+		user.Name,
+		user.EmailVerified,
+		user.CreatedAt,
+		user.UpdatedAt,
 	)
 
 	if err != nil {
@@ -104,22 +100,19 @@ func (r *repository) Create(ctx context.Context, user *User) error {
 // Update updates an existing user record
 func (r *repository) Update(ctx context.Context, user *User) error {
 	user.UpdatedAt = time.Now().UTC()
+	user.Email = normalizeEmail(user.Email)
 
 	query := `
 		UPDATE users
-		SET email = ?, email_verified = ?, updated_at = ?
-		WHERE id = ? AND deleted_at IS NULL
+		SET email = $1, name = $2, email_verified = $3, updated_at = $4
+		WHERE id = $5 AND deleted_at IS NULL
 	`
-
-	emailVerified := 0
-	if user.EmailVerified {
-		emailVerified = 1
-	}
 
 	result, err := r.db.ExecContext(ctx, query,
 		user.Email,
-		emailVerified,
-		user.UpdatedAt.Format(time.RFC3339),
+		user.Name,
+		user.EmailVerified,
+		user.UpdatedAt,
 		user.ID,
 	)
 
@@ -137,4 +130,9 @@ func (r *repository) Update(ctx context.Context, user *User) error {
 	}
 
 	return nil
+}
+
+// normalizeEmail lowercases and trims an email address for identity purposes.
+func normalizeEmail(email string) string {
+	return strings.ToLower(strings.TrimSpace(email))
 }

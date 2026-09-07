@@ -8,7 +8,7 @@ interface AppLayoutProps {
 
 const tabs = [
   { path: '/dashboard', label: 'Dashboard', icon: 'home' as const },
-  { path: '/commitments', label: 'Commitments', icon: 'list' as const },
+  { path: '/contracts', label: 'Contracts', icon: 'list' as const },
   { path: '/profile', label: 'Profile', icon: 'user' as const },
 ];
 

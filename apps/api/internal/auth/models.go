@@ -11,6 +11,7 @@ type User struct {
 	ExternalAuthProvider string     `json:"external_auth_provider"`
 	ExternalSubjectID    string     `json:"external_subject_id"`
 	Email                string     `json:"email"`
+	Name                 string     `json:"name,omitempty"`
 	EmailVerified        bool       `json:"email_verified"`
 	CreatedAt            time.Time  `json:"created_at"`
 	UpdatedAt            time.Time  `json:"updated_at"`

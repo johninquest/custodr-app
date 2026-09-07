@@ -1,7 +1,7 @@
 # ============================================
 # Stage 1: Build the Go binary
 # ============================================
-FROM golang:1.21-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the binary — modernc.org/sqlite is pure Go, no CGO required
+# Build the binary — pgx uses the database/sql driver, no CGO required
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-w -s" \
     -o /app/server \
@@ -36,9 +36,6 @@ COPY --from=builder /app/server .
 
 # Copy migrations
 COPY --from=builder /app/migrations ./migrations
-
-# Create data directory for SQLite
-RUN mkdir -p /data && chown appuser:appgroup /data
 
 # Switch to non-root user
 USER appuser

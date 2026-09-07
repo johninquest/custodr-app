@@ -2,6 +2,28 @@ version: "3.8"
 
 services:
   # ============================================
+  # PostgreSQL Database
+  # ============================================
+  postgres:
+    image: postgres:18-alpine
+    container_name: custodr-app-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-pguser}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pgpassword}
+      - POSTGRES_DB=${POSTGRES_DB:-pgdb}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - custodr-app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pguser} -d ${POSTGRES_DB:-pgdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ============================================
   # Go Backend API
   # ============================================
   api:
@@ -15,7 +37,7 @@ services:
     environment:
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8080
-      - DB_PATH=/data/custodr.db
+      - DATABASE_URL=postgres://${POSTGRES_USER:-pguser}:${POSTGRES_PASSWORD:-pgpassword}@postgres:5432/${POSTGRES_DB:-pgdb}?sslmode=disable
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
       - FIREBASE_CREDENTIALS_PATH=/app/firebase-service-account.json
       - MAILJET_API_KEY=${MAILJET_API_KEY:-}
@@ -24,8 +46,10 @@ services:
       - MAILJET_FROM_NAME=${MAILJET_FROM_NAME:-Custodr}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
-      - sqlite-data:/data
       # Mount Firebase credentials if available
       - ${FIREBASE_CREDENTIALS_PATH:-./firebase-service-account.json}:/app/firebase-service-account.json:ro
     networks:
@@ -61,7 +85,7 @@ services:
       start_period: 5s
 
 volumes:
-  sqlite-data:
+  postgres-data:
     driver: local
 
 networks:

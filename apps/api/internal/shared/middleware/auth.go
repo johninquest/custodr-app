@@ -69,6 +69,7 @@ func AuthMiddleware(verifier auth.TokenVerifier, repo auth.Repository) echo.Midd
 			// Set user context values for downstream handlers
 			c.Set("user_id", user.ID)
 			c.Set("firebase_uid", firebaseUID)
+			c.Set("user_email", user.Email)
 
 			return next(c)
 		}

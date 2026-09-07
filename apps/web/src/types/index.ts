@@ -3,16 +3,17 @@
 export interface User {
   id: string
   email: string
+  name?: string
   email_verified: boolean
   created_at: string
   updated_at: string
 }
 
-export interface Commitment {
+export interface Contract {
   id: string
   user_id: string
   name: string
-  category: CommitmentCategory
+  category: ContractCategory
   provider: string
   start_date: string
   renewal_date: string
@@ -20,13 +21,13 @@ export interface Commitment {
   cost: number
   currency: string
   billing_frequency: BillingFrequency
-  status: CommitmentStatus
+  status: ContractStatus
   notes?: string
   created_at: string
   updated_at: string
 }
 
-export type CommitmentCategory =
+export type ContractCategory =
   | 'insurance'
   | 'electricity_contract'
   | 'gas_contract'
@@ -36,11 +37,41 @@ export type CommitmentCategory =
 
 export type BillingFrequency = 'monthly' | 'quarterly' | 'semi_annual' | 'annual'
 
-export type CommitmentStatus = 'active' | 'cancelled' | 'expired' | 'paused' | 'review_needed'
+export type ContractStatus = 'active' | 'cancelled' | 'expired' | 'paused' | 'review_needed'
+
+export interface ContractShare {
+  id: string
+  contract_id: string
+  grantee_email: string
+  role: 'viewer'
+  granted_by: string
+  granted_at: string
+  revoked_at?: string
+}
+
+export interface AuditEntry {
+  id: string
+  entity_type: 'contract' | 'contract_share'
+  entity_id: string
+  actor_user_id?: string
+  action: string
+  field?: string
+  before_value?: string
+  after_value?: string
+  created_at: string
+}
+
+export interface ConsentRecord {
+  id: string
+  consent_type: 'email_notifications'
+  version: string
+  granted_at: string
+  withdrawn_at?: string
+}
 
 export interface Reminder {
   id: string
-  commitment_id: string
+  contract_id: string
   reminder_type: 'renewal_date' | 'cancellation_deadline'
   scheduled_date: string
   sent_at?: string

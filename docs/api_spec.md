@@ -1,4 +1,4 @@
-# API Specification — Commitment Management Platform
+# API Specification — Contract Management Platform
 
 ## Base URL
 
@@ -81,7 +81,7 @@ Retrieve the authenticated user's profile.
 
 #### DELETE /users/me
 
-Permanently delete the authenticated user's account and all associated data (GDPR right to erasure). This is a hard delete — all commitments, reminders, and notification records are removed.
+Permanently delete the authenticated user's account and all associated data (GDPR right to erasure). This is a hard delete — all contracts, reminders, notification records, and consents are removed. `audit_logs.actor_user_id` is set to NULL.
 
 **Response (204 No Content):** Empty response
 
@@ -91,11 +91,75 @@ Permanently delete the authenticated user's account and all associated data (GDP
 
 ---
 
-### Commitments
+### Consents
 
-#### GET /commitments
+#### GET /users/me/consents
 
-List all commitments for the authenticated user.
+Retrieve the authenticated user's consent records (Einwilligungserklärungen).
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "consent_type": "email_notifications",
+      "version": "2026-09-05",
+      "granted_at": "2026-09-05T10:00:00Z",
+      "withdrawn_at": null
+    }
+  ]
+}
+```
+
+#### POST /users/me/consents
+
+Grant a new consent (or record a new version of an existing type).
+
+**Request:**
+```json
+{
+  "consent_type": "email_notifications",
+  "version": "2026-09-05"
+}
+```
+
+**Validation Rules:**
+- `consent_type`: Required, must be `email_notifications`
+- `version`: Required, consent text version identifier
+
+**Response (201 Created):**
+```json
+{
+  "id": "uuid",
+  "consent_type": "email_notifications",
+  "version": "2026-09-05",
+  "granted_at": "2026-09-05T10:00:00Z",
+  "withdrawn_at": null
+}
+```
+
+**Errors:**
+- `400 Bad Request` — Validation failed
+- `401 Unauthorized` — Missing or invalid authentication
+
+#### DELETE /users/me/consents/:type
+
+Withdraw consent (sets `withdrawn_at`). The record is retained for audit.
+
+**Response (204 No Content):** Empty response
+
+**Errors:**
+- `404 Not Found` — No active consent of this type
+- `401 Unauthorized` — Missing or invalid authentication
+
+---
+
+### Contracts
+
+#### GET /contracts
+
+List all contracts visible to the authenticated user (owned contracts plus contracts shared with them as a viewer).
 
 **Query Parameters:**
 - `status` (optional): Filter by status (`active`, `cancelled`, `expired`, `paused`, `review_needed`)
@@ -133,9 +197,9 @@ List all commitments for the authenticated user.
 }
 ```
 
-#### POST /commitments
+#### POST /contracts
 
-Create a new commitment.
+Create a new contract.
 
 **Request:**
 ```json
@@ -190,9 +254,9 @@ Create a new commitment.
 - `401 Unauthorized` — Missing or invalid authentication
 - `500 Internal Server Error` — Database error
 
-#### GET /commitments/:id
+#### GET /contracts/:id
 
-Retrieve a single commitment.
+Retrieve a single contract.
 
 **Response (200 OK):**
 ```json
@@ -215,12 +279,12 @@ Retrieve a single commitment.
 ```
 
 **Errors:**
-- `404 Not Found` — Commitment not found or doesn't belong to user
+- `404 Not Found` — Contract not found or not visible to the user
 - `401 Unauthorized` — Missing or invalid authentication
 
-#### PUT /commitments/:id
+#### PUT /contracts/:id
 
-Update a commitment.
+Update a contract.
 
 **Request:**
 ```json
@@ -261,22 +325,22 @@ Update a commitment.
 
 **Errors:**
 - `400 Bad Request` — Validation failed
-- `404 Not Found` — Commitment not found or doesn't belong to user
+- `404 Not Found` — Contract not found or not visible to the user
 - `401 Unauthorized` — Missing or invalid authentication
 
-#### DELETE /commitments/:id
+#### DELETE /contracts/:id
 
-Soft delete a commitment (sets `deleted_at` timestamp).
+Soft delete a contract (sets `deleted_at`). Also soft-deletes its audit log rows.
 
 **Response (204 No Content):** Empty response
 
 **Errors:**
-- `404 Not Found` — Commitment not found or doesn't belong to user
+- `404 Not Found` — Contract not found or not visible to the user
 - `401 Unauthorized` — Missing or invalid authentication
 
-#### GET /commitments/upcoming
+#### GET /contracts/upcoming
 
-Get commitments with upcoming renewal or cancellation deadlines.
+Get contracts with upcoming renewal or cancellation deadlines.
 
 **Query Parameters:**
 - `days` (optional, default: 90): Number of days to look ahead
@@ -309,6 +373,104 @@ Get commitments with upcoming renewal or cancellation deadlines.
 }
 ```
 
+#### GET /contracts/:id/shares
+
+List active shares for a contract (owner only).
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "grantee_email": "wife@example.com",
+      "role": "viewer",
+      "granted_by": "uuid",
+      "granted_at": "2026-09-05T10:00:00Z"
+    }
+  ]
+}
+```
+
+**Errors:**
+- `404 Not Found` — Contract not found or not owned by the user
+- `401 Unauthorized` — Missing or invalid authentication
+
+#### POST /contracts/:id/shares
+
+Grant read-only access to a contract by email (owner only). The grantee need not have an account yet; access resolves at their next login.
+
+**Request:**
+```json
+{
+  "grantee_email": "wife@example.com"
+}
+```
+
+**Validation Rules:**
+- `grantee_email`: Required, valid email address
+
+**Response (201 Created):**
+```json
+{
+  "id": "uuid",
+  "contract_id": "uuid",
+  "grantee_email": "wife@example.com",
+  "role": "viewer",
+  "granted_by": "uuid",
+  "granted_at": "2026-09-05T10:00:00Z"
+}
+```
+
+**Errors:**
+- `400 Bad Request` — Validation failed
+- `404 Not Found` — Contract not found or not owned by the user
+- `409 Conflict` — Share already exists for this email
+- `401 Unauthorized` — Missing or invalid authentication
+
+#### DELETE /contracts/:id/shares/:shareId
+
+Revoke a share (sets `revoked_at`). Owner only.
+
+**Response (204 No Content):** Empty response
+
+**Errors:**
+- `404 Not Found` — Share or contract not found, or not owned by the user
+- `401 Unauthorized` — Missing or invalid authentication
+
+#### GET /contracts/:id/audit
+
+Get the activity feed for a contract. Readable by the owner and by active grantees.
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "entity_type": "contract",
+      "entity_id": "uuid",
+      "actor_user_id": "uuid",
+      "action": "updated",
+      "field": "cost",
+      "before_value": 15.99,
+      "after_value": 17.99,
+      "created_at": "2026-07-13T11:00:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "total_pages": 1
+  }
+}
+```
+
+**Errors:**
+- `404 Not Found` — Contract not found or not visible to the user
+- `401 Unauthorized` — Missing or invalid authentication
+
 ---
 
 ### Reminders
@@ -328,8 +490,8 @@ List reminder history for the authenticated user.
   "data": [
     {
       "id": "uuid",
-      "commitment_id": "uuid",
-      "commitment_name": "Netflix Premium",
+      "contract_id": "uuid",
+      "contract_name": "Netflix Premium",
       "reminder_type": "cancellation_deadline",
       "scheduled_date": "2025-12-15",
       "sent_at": "2025-12-15T08:00:00Z",
@@ -402,14 +564,14 @@ Get dashboard summary data.
     "next_30_days": 5,
     "next_90_days": 12
   },
-  "commitments_by_status": {
+  "contracts_by_status": {
     "active": 15,
     "cancelled": 3,
     "expired": 2,
     "paused": 1,
     "review_needed": 4
   },
-  "commitments_by_category": {
+  "contracts_by_category": {
     "insurance": 3,
     "electricity_contract": 2,
     "gas_contract": 1,
@@ -569,10 +731,10 @@ The reminder system operates in two modes:
 
 ### 1. User-Facing API (In-App Reminders)
 
-The `GET /reminders` endpoint returns reminder records for display in the frontend. Reminders are automatically generated when a commitment is created or updated, based on the user's `reminder_preferences`. Each reminder represents a scheduled notification at a specific window (e.g., 30 days before cancellation deadline).
+The `GET /reminders` endpoint returns reminder records for display in the frontend. Reminders are automatically generated when a contract is created or updated, based on the user's `reminder_preferences`. Each reminder represents a scheduled notification at a specific window (e.g., 30 days before cancellation deadline).
 
 **Reminder generation flow:**
-1. User creates/updates a commitment with renewal and/or cancellation dates
+1. User creates/updates a contract with renewal and/or cancellation dates
 2. Service layer reads user's `reminder_preferences` (default: `[90, 60, 30, 14, 7, 1]`)
 3. For each window, calculate `scheduled_date = deadline - days_before`
 4. Insert reminder records with `status = 'pending'`

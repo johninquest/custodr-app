@@ -5,6 +5,28 @@ version: "3.8"
 
 services:
   # ============================================
+  # PostgreSQL Database (Development)
+  # ============================================
+  postgres:
+    image: postgres:18-alpine
+    container_name: custodr-app-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-pguser}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pgpassword}
+      - POSTGRES_DB=${POSTGRES_DB:-pgdb}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - custodr-app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pguser} -d ${POSTGRES_DB:-pgdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ============================================
   # Go Backend API (Development)
   # ============================================
   api:
@@ -13,9 +35,12 @@ services:
       dockerfile: Dockerfile.dev
     volumes:
       - ./apps/api:/app
-      - sqlite-data:/data
     environment:
       - LOG_LEVEL=debug
+      - DATABASE_URL=postgres://${POSTGRES_USER:-pguser}:${POSTGRES_PASSWORD:-pgpassword}@postgres:5432/${POSTGRES_DB:-pgdb}?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
     # Use air for hot reload in development
     command: ["air", "-c", ".air.toml"]
 

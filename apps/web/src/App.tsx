@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth'
 import { AppLayout } from './components/layout/AppLayout'
 import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
+import ContractsPage from './pages/ContractsPage'
 import ProfilePage from './pages/ProfilePage'
 
 function AppRoutes() {
@@ -30,6 +31,18 @@ function AppRoutes() {
           isAuthenticated ? (
             <AppLayout>
               <DashboardPage />
+            </AppLayout>
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        }
+      />
+      <Route
+        path="/contracts"
+        element={
+          isAuthenticated ? (
+            <AppLayout>
+              <ContractsPage />
             </AppLayout>
           ) : (
             <Navigate to="/auth" replace />

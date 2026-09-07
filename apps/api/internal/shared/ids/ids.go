@@ -1,7 +1,7 @@
 // Package ids centralizes ID generation for all domain modules.
 //
 // All primary keys are UUIDv7 (RFC 9562): time-ordered, which improves
-// SQLite B-tree index locality compared to random UUIDv4 values.
+// B-tree index locality compared to random UUIDv4 values.
 package ids
 
 import "github.com/google/uuid"
