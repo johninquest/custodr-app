@@ -13,6 +13,7 @@
     "dev:api": "npm run dev --workspace=api",
     "dev:api-nest": "npm run dev --workspace=api-nest",
     "dev:web": "npm run dev --workspace=web",
+    "dev:nest": "turbo run dev --filter=api-nest --filter=web",
     "build": "turbo run build",
     "build:api": "npm run build --workspace=api",
     "build:api-nest": "npm run build --workspace=api-nest",

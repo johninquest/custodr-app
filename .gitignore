@@ -42,6 +42,9 @@ build/
 .next/
 .turbo/
 
+# TypeScript incremental build info
+*.tsbuildinfo
+
 # Test coverage
 coverage/
 *.cover
