@@ -85,6 +85,15 @@ export class ContractsService {
     return contract;
   }
 
+  async upcoming(
+    userId: string,
+    email: string,
+    days: number,
+    type?: 'renewal' | 'cancellation',
+  ): Promise<ContractRow[]> {
+    return this.repo.upcoming(userId, email, days, type);
+  }
+
   async update(
     id: string,
     userId: string,

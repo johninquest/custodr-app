@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 
@@ -28,6 +28,7 @@ export class AuthController {
    * token, per `docs/api_spec.md`.
    */
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   async login(@Body({ schema: loginSchema }) body: LoginDto) {
     let identity;
     try {

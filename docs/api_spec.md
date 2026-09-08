@@ -343,7 +343,7 @@ Soft delete a contract (sets `deleted_at`). Also soft-deletes its audit log rows
 Get contracts with upcoming renewal or cancellation deadlines.
 
 **Query Parameters:**
-- `days` (optional, default: 90): Number of days to look ahead
+- `days` (optional, default: 90, max: 365): Number of days to look ahead
 - `type` (optional): Filter by `renewal` or `cancellation`
 
 **Response (200 OK):**

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, count, desc, eq, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
 import { DRIZZLE, type Database } from '../db/db.module.js';
 import {
@@ -95,7 +96,74 @@ export class ContractsRepository {
     return { rows: rows.map(toContractRow), total: Number(totalRow?.value ?? 0) };
   }
 
-  /** Fetch a contract the user owns or has been granted access to. */
+  /**
+   * Active contracts (owned or granted) with a renewal and/or cancellation
+   * deadline within `days` of today.
+   *
+   * `type` narrows the window to a single deadline; omitted, both qualify.
+   * Dates are `DATE` columns compared as `YYYY-MM-DD` strings, which sort and
+   * compare lexicographically with the same result as chronological order.
+   */
+  async upcoming(
+    userId: string,
+    email: string,
+    days: number,
+    type?: 'renewal' | 'cancellation',
+  ): Promise<ContractRow[]> {
+    const granteeEmail = normalizeEmail(email);
+
+    const visible = or(
+      eq(contracts.userId, userId),
+      sql`EXISTS (
+        SELECT 1 FROM ${contractShares}
+        WHERE ${contractShares.contractId} = ${contracts.id}
+          AND ${contractShares.granteeEmail} = ${granteeEmail}
+          AND ${contractShares.revokedAt} IS NULL
+      )`,
+    );
+
+    const today = new Date().toISOString().slice(0, 10);
+    const horizon = new Date(Date.now() + days * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+
+    const inWindow = (column: AnyPgColumn) =>
+      and(gte(column, today), lte(column, horizon));
+
+    const deadline = (() => {
+      if (type === 'renewal') return inWindow(contracts.renewalDate);
+      if (type === 'cancellation') {
+        return and(
+          inWindow(contracts.cancellationDeadline),
+          // sql-not-null guard; Drizzle's gte already implies non-null but the
+          // typed column allows NULL, so keep the intent explicit.
+          sql`${contracts.cancellationDeadline} IS NOT NULL`,
+        );
+      }
+      return or(
+        inWindow(contracts.renewalDate),
+        and(
+          sql`${contracts.cancellationDeadline} IS NOT NULL`,
+          inWindow(contracts.cancellationDeadline),
+        ),
+      );
+    })();
+
+    const rows = await this.db
+      .select()
+      .from(contracts)
+      .where(
+        and(
+          isNull(contracts.deletedAt),
+          eq(contracts.status, 'active'),
+          visible,
+          deadline,
+        ),
+      )
+      .orderBy(asc(contracts.renewalDate));
+
+    return rows.map(toContractRow);
+  }
   async findVisible(
     id: string,
     userId: string,

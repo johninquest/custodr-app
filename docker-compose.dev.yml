@@ -15,6 +15,10 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-pguser}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pgpassword}
       - POSTGRES_DB=${POSTGRES_DB:-pgdb}
+    # Published so `drizzle-kit migrate` can target localhost:5432 without the
+    # `docker run --network` workaround. Remove (or leave unset) in production.
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       # PostgreSQL 18+ images expect a single mount at /var/lib/postgresql and
       # place data in a major-version subdirectory. Mounting .../data directly

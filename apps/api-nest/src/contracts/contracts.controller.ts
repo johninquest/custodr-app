@@ -25,6 +25,7 @@ import {
   CONTRACT_STATUSES,
 } from '../db/schema/enums.js';
 import { paginated, paginationQuerySchema } from '../shared/pagination.js';
+import { centsToDecimal, decimalToCents, toMonthlyCents } from './money.js';
 import { ContractsService } from './contracts.service.js';
 
 const dateSchema = z
@@ -70,6 +71,11 @@ const idParamSchema = z.string().uuid();
 
 const createShareSchema = z.object({
   grantee_email: z.email(),
+});
+
+const upcomingQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(365).default(90),
+  type: z.enum(['renewal', 'cancellation']).optional(),
 });
 
 @ApiTags('contracts')
@@ -125,9 +131,50 @@ export class ContractsController {
    * this literal segment over the parameterised route below.
    */
   @Get('upcoming')
-  async upcoming() {
-    // TODO(phase-3): implement once reminder windows are wired up.
-    return { data: [], summary: { total_upcoming: 0, total_cost_monthly: 0, currency: 'EUR' } };
+  async upcoming(
+    @CurrentUser() user: CurrentUserPayload,
+    @Query({ schema: upcomingQuerySchema })
+    query: z.infer<typeof upcomingQuerySchema>,
+  ) {
+    const rows = await this.contracts.upcoming(
+      user.id,
+      user.email,
+      query.days,
+      query.type,
+    );
+
+    const today = utcDay(new Date());
+
+    const data = rows.map((c) => ({
+      id: c.id,
+      name: c.name,
+      category: c.category,
+      provider: c.provider,
+      renewal_date: c.renewalDate,
+      cancellation_deadline: c.cancellationDeadline,
+      days_until_renewal: daysBetween(today, c.renewalDate),
+      days_until_cancellation: c.cancellationDeadline
+        ? daysBetween(today, c.cancellationDeadline)
+        : null,
+      cost: c.cost,
+      currency: c.currency,
+      billing_frequency: c.billingFrequency,
+      status: c.status,
+    }));
+
+    const totalMonthlyCents = rows.reduce(
+      (sum, c) => sum + toMonthlyCents(c.billingFrequency, decimalToCents(c.cost)),
+      0,
+    );
+
+    return {
+      data,
+      summary: {
+        total_upcoming: data.length,
+        total_cost_monthly: centsToDecimal(Math.round(totalMonthlyCents)),
+        currency: 'EUR',
+      },
+    };
   }
 
   @Get(':id')
@@ -272,4 +319,21 @@ function toApiContract(c: {
     created_at: c.createdAt,
     updated_at: c.updatedAt,
   };
+}
+
+/** Today's `YYYY-MM-DD` in UTC, matching the repository's date-window bounds. */
+function utcDay(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Whole days between two `YYYY-MM-DD` dates, parsed at UTC midnight.
+ *
+ * `Date` arithmetic is done in UTC so daylight-saving transitions in the
+ * server's local timezone cannot shift a "days until" figure by ±1.
+ */
+function daysBetween(from: string, to: string): number {
+  const fromMs = Date.parse(`${from}T00:00:00Z`);
+  const toMs = Date.parse(`${to}T00:00:00Z`);
+  return Math.round((toMs - fromMs) / 86_400_000);
 }

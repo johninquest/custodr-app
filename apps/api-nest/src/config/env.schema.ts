@@ -22,10 +22,16 @@ export const envSchema = z.object({
     .enum(['debug', 'info', 'warn', 'error'])
     .default('info'),
 
-  // Firebase is optional: when unset, auth is disabled and protected routes
-  // are not registered (mirrors the Go bootstrap behaviour).
+  // Firebase is optional: when unset and NODE_ENV !== 'production', the
+  // DevAuthProvider accepts the fixed bearer token below so protected routes
+  // can be exercised locally without a Firebase project.
   FIREBASE_PROJECT_ID: z.string().optional(),
   FIREBASE_CREDENTIALS_PATH: z.string().optional(),
+
+  // Development-only bearer token accepted by DevAuthProvider. Ignored when
+  // Firebase is configured or NODE_ENV === 'production'. Owned by the human;
+  // never commit a real value.
+  DEV_AUTH_TOKEN: z.string().optional(),
 
   MAILJET_API_KEY: z.string().optional(),
   MAILJET_API_SECRET: z.string().optional(),

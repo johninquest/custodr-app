@@ -14,15 +14,7 @@ import {
   CONTRACT_STATUSES,
 } from '../db/schema/enums.js';
 import { contracts } from '../db/schema/index.js';
-import { centsToDecimal } from '../contracts/money.js';
-
-/** Monthly divisor per billing frequency, for normalising cost. */
-const MONTHLY_DIVISOR: Record<string, number> = {
-  monthly: 1,
-  quarterly: 3,
-  semi_annual: 6,
-  annual: 12,
-};
+import { centsToDecimal, toMonthlyCents } from '../contracts/money.js';
 
 @ApiTags('dashboard')
 @Controller('dashboard')
@@ -84,10 +76,10 @@ export class DashboardController {
       .orderBy(desc(contracts.createdAt))
       .limit(5);
 
-    const monthlyCents = costRows.reduce((sum, r) => {
-      const divisor = MONTHLY_DIVISOR[r.freq] ?? 1;
-      return sum + Number(r.cents ?? 0) / divisor;
-    }, 0);
+    const monthlyCents = costRows.reduce(
+      (sum, r) => sum + toMonthlyCents(r.freq, Number(r.cents ?? 0)),
+      0,
+    );
 
     return {
       upcoming_deadlines: {

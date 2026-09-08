@@ -378,11 +378,19 @@ CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id, created
 - `entity_type`: What changed (`contract` or `contract_share`)
 - `entity_id`: UUID of the contract (or share) that changed
 - `actor_user_id`: User who performed the action (SET NULL on user erasure)
-- `action`: `created`, `updated`, `soft_deleted`, `hard_deleted`, `shared`, `revoked`
+- `action`: `created`, `updated`, `granted`, `revoked`
 - `field`: Which field changed (NULL for non-field actions)
 - `before_value` / `after_value`: JSONB values of the changed field (NULL where not applicable)
 - `created_at`: When the action occurred
 - `deleted_at`: Soft-delete state (mirrors the contract's soft/hard delete model)
+
+> **On deletion actions:** soft and hard deletes are deliberately **not** recorded
+> as `action` values. A soft delete is captured by the entity's own `deleted_at`
+> timestamp, and the soft-delete of a contract also soft-deletes its audit rows in
+> the same operation (so such an entry would be invisible by construction). A hard
+> delete is GDPR erasure — physically removing the row — and is not an auditable
+> event. The `action` column therefore holds only observable domain events:
+> `created`, `updated`, `granted`, `revoked`.
 
 **Integrity & retention:**
 - Append-only from the application layer (no UPDATE/DELETE paths are exposed).
