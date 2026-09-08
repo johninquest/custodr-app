@@ -23,7 +23,7 @@ import { FirebaseAuthProvider } from './firebase.provider.js';
       provide: AUTH_PROVIDER,
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const projectId = config.get<string>('FIREBASE_PROJECT_ID');
+        const projectId = config.get<string>('FIREBASE_PROJECT_ID')?.trim();
         const nodeEnv = config.get<string>('NODE_ENV') ?? 'development';
 
         if (!projectId && nodeEnv !== 'production') {

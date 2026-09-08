@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { and, asc, desc, eq, gte, isNull, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 
 import { AuthGuard } from '../auth/auth.guard.js';
 import {
@@ -9,7 +9,6 @@ import {
 } from '../auth/current-user.decorator.js';
 import { DRIZZLE, type Database } from '../db/db.module.js';
 import {
-  BILLING_FREQUENCIES,
   CONTRACT_CATEGORIES,
   CONTRACT_STATUSES,
 } from '../db/schema/enums.js';
@@ -129,5 +128,3 @@ function zeroFilled<T extends readonly string[]>(
   }
   return out;
 }
-
-export { BILLING_FREQUENCIES, asc, gte, lte };

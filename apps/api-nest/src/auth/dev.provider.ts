@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { timingSafeEqual } from 'node:crypto';
 
 import { AuthProvider, type VerifiedIdentity } from './auth-provider.js';
 import { UnauthorizedException } from '../shared/errors.js';
@@ -33,9 +34,19 @@ export class DevAuthProvider extends AuthProvider {
   }
 
   async verifyToken(token: string): Promise<VerifiedIdentity> {
-    if (!this.devToken || token !== this.devToken) {
+    if (!this.devToken) {
       throw new UnauthorizedException('Invalid dev token');
     }
+
+    // Constant-time comparison so token length/short-circuit timing cannot be
+    // used to recover the dev token over the network. The length check is
+    // required before `timingSafeEqual`, which throws on mismatched lengths.
+    const expected = Buffer.from(this.devToken);
+    const actual = Buffer.from(token);
+    if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
+      throw new UnauthorizedException('Invalid dev token');
+    }
+
     return { subjectId: 'dev-user', email: 'dev@example.com' };
   }
 }
