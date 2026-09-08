@@ -1,6 +1,13 @@
 # Plan: Go → NestJS + Drizzle Migration (Pivot)
 
-> Status: Draft (awaiting Phase 0 ADR + review)
+> **Status: SUPERSEDED — historical record only.**
+> Phases 0–3 are complete (commits `03152ad`, `debf64b`, `4f4235b` on
+> `nestjs-pivot`). This document is retained for its original rationale and
+> scope discussion.
+>
+> **For remaining work (Phase 4 & 5), see
+> [`nestjs-migration-phase4-5-handover.md`](nestjs-migration-phase4-5-handover.md).**
+>
 > Date: 2026-09-07
 
 ## TL;DR

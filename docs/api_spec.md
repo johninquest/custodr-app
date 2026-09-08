@@ -747,11 +747,24 @@ A separate background worker process scans for pending reminders whose `schedule
 **Background job flow:**
 1. Worker runs on a schedule (e.g., daily at 08:00 CET)
 2. Query: `SELECT * FROM reminders WHERE status = 'pending' AND scheduled_date <= date('now')`
-3. For each pending reminder, send email via Mailjet/Postmark
+3. For each pending reminder, send email via the configured email provider
 4. Update reminder status and log to `notifications` table
 5. Retry failed sends with exponential backoff (max 3 attempts)
 
 > **Note:** Reminder system implementation is deferred to a later phase. The API endpoints and database schema are defined here for completeness.
+
+> **Implementation status (2026-09-08):** The background email job is
+> **deferred and not required for the Go → NestJS cutover**. The design above
+> remains the intended target.
+>
+> - The email provider is an **abstraction** (`EmailProvider`), not a specific
+>   vendor. Mailjet/Postmark are the intended implementations; the contract is
+>   deliberately stack- and vendor-neutral.
+> - The `notifications` table and `reminders.status` values (`pending`, `sent`,
+>   `failed`) are already defined in `schema.md` and are in scope; only the
+>   delivery mechanism is deferred.
+> - The user-facing `GET /reminders` and `GET|PUT /reminders/preferences`
+>   endpoints **are** in scope and must be implemented.
 
 ---
 

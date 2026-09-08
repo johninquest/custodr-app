@@ -133,7 +133,11 @@ Three facts make this the cheapest possible moment to switch:
 - `docs/schema.md`'s "Migration Tool" section is updated from `golang-migrate`
   + pgx to `drizzle-kit`. Table and column definitions are unchanged.
 - Mailjet's `EmailProvider` is greenfield — Go's `notifications/mailjet/` is
-  empty, so there is no reference implementation to port.
+  empty, so there is no reference implementation to port. **Deferred: email
+  delivery is explicitly out of scope for this migration and is NOT a cutover
+  blocker.** The `notifications` table and the reminder background-job design
+  remain documented in `api_spec.md` for a later phase; only the contract
+  documentation is in scope here, not an implementation.
 - `@nestjs/observe` (Nest 12's native observability) is deferred to keep the
   migration surface small; it is opt-in and can be added later via
   `nest upgrade --observe`.
