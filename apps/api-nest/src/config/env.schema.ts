@@ -26,7 +26,8 @@ export const envSchema = z.object({
   // DevAuthProvider accepts the fixed bearer token below so protected routes
   // can be exercised locally without a Firebase project.
   FIREBASE_PROJECT_ID: z.string().optional(),
-  FIREBASE_CREDENTIALS_PATH: z.string().optional(),
+  FIREBASE_CLIENT_EMAIL: z.string().optional(),
+  FIREBASE_PRIVATE_KEY: z.string().optional(),
 
   // Development-only bearer token accepted by DevAuthProvider. Ignored when
   // Firebase is configured or NODE_ENV === 'production'. Owned by the human;

@@ -1,5 +1,3 @@
-version: "3.8"
-
 # Development overrides - use with:
 # docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 
@@ -34,22 +32,28 @@ services:
       start_period: 10s
 
   # ============================================
-  # Go Backend API (Development)
+  # NestJS Backend API (Development)
   # ============================================
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: apps/api-nest/Dockerfile.dev
     volumes:
-      - ./apps/api:/app
+      - ./apps/api-nest:/app/apps/api-nest
     environment:
+      - NODE_ENV=development
+      - PORT=8080
       - LOG_LEVEL=debug
       - DATABASE_URL=postgres://${POSTGRES_USER:-pguser}:${POSTGRES_PASSWORD:-pgpassword}@postgres:5432/${POSTGRES_DB:-pgdb}?sslmode=disable
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
+      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL:-}
+      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY:-}
+      - DEV_AUTH_TOKEN=${DEV_AUTH_TOKEN:-}
     depends_on:
       postgres:
         condition: service_healthy
-    # Use air for hot reload in development
-    command: ["air", "-c", ".air.toml"]
+    # `nest start --watch` for hot reload (defined in Dockerfile.dev CMD)
 
   # ============================================
   # React Frontend (Development)

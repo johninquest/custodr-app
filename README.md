@@ -15,10 +15,10 @@ Custodr helps German/EU consumers centrally manage all their recurring obligatio
 | Layer | Choice |
 |-------|--------|
 | Frontend | React + TypeScript + Tailwind CSS |
-| Backend | Go + Echo |
-| Database | SQLite (modernc.org/sqlite, pure Go driver) |
-| Authentication | Firebase Auth (behind internal interface) |
-| Email | Mailjet / Postmark |
+| Backend | NestJS 12 + Drizzle ORM |
+| Database | PostgreSQL 18 (Drizzle ORM) |
+| Authentication | Firebase Auth (behind `AuthProvider` interface) |
+| Email | Mailjet / Postmark (deferred) |
 | Hosting | Hetzner VPS (EU-based) |
 | Deployment | Docker Compose + Traefik |
 | Architecture | Modular monolith (domain-based) |
@@ -64,20 +64,18 @@ Type `/` in Copilot Chat to see available commands:
 ```
 custodr-app/
 ├── apps/
-│   ├── api/                     # Go backend (Echo + SQLite)
-│   │   ├── cmd/server/          # Entry point
-│   │   ├── internal/            # Domain-based modules
-│   │   │   ├── auth/
-│   │   │   ├── users/
-│   │   │   ├── commitments/
-│   │   │   ├── reminders/
-│   │   │   ├── notifications/
-│   │   │   ├── jobs/
-│   │   │   └── shared/          # config, database, logger, middleware, errors
-│   │   ├── migrations/          # SQL migration files
-│   │   ├── go.mod
-│   │   ├── package.json
-│   │   └── Dockerfile
+│   ├── api-nest/                # NestJS backend (PostgreSQL + Drizzle)
+│   │   ├── src/
+│   │   │   ├── auth/            # controller, guard, provider, decorator
+│   │   │   ├── users/           # controller, service, repository
+│   │   │   ├── contracts/       # controller, service, repository, money
+│   │   │   ├── reminders/       # controller
+│   │   │   ├── dashboard/       # controller
+│   │   │   ├── db/              # Drizzle schema
+│   │   │   └── shared/          # errors, pagination, ids
+│   │   ├── drizzle/             # generated migrations
+│   │   └── package.json
+│   ├── api-legacy/              # Archived Go backend (tagged go-legacy)
 │   └── web/                     # React frontend (Vite + TypeScript)
 │       ├── src/
 │       │   ├── components/      # UI and layout components
@@ -112,10 +110,8 @@ custodr-app/
 
 ### Prerequisites
 
-- **Go** 1.21+
-- **Node.js** 18+ with npm 9+
+- **Node.js** 20.19+ (NestJS 12 floor) with npm 9+
 - **Docker** and Docker Compose (optional, for containerized development)
-- **golang-migrate** (for database migrations)
 
 ### Local Development
 
@@ -124,17 +120,14 @@ custodr-app/
 ```bash
 # Root (installs node dependencies across all workspaces)
 npm install
-
-# Backend dependencies (if needed)
-cd apps/api && go mod download
 ```
 
 **2. Configure environment:**
 
 ```bash
 # Backend
-cp apps/api/.env.example apps/api/.env
-# Edit apps/api/.env with your Firebase and Mailjet credentials
+# Uses env vars documented in .env.example (root). See FIREBASE_* / DEV_AUTH_TOKEN
+# / DATABASE_URL for the NestJS API (apps/api-nest).
 
 # Frontend
 cp apps/web/.env.example apps/web/.env
@@ -143,11 +136,11 @@ cp apps/web/.env.example apps/web/.env
 **3. Start development servers:**
 
 ```bash
-# Start both Backend (Air live reload on :8080) and Frontend (Vite on :5173) in parallel:
+# Start both Backend (Nest on :8080) and Frontend (Vite on :5173) in parallel:
 npm run dev
 
 # Or start individually:
-npm run dev:api    # Go backend only (with Air live reload)
+npm run dev:api    # NestJS backend only (watch mode)
 npm run dev:web    # React frontend only (with Vite)
 ```
 
@@ -177,13 +170,13 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start all dev servers in parallel (Turborepo) |
-| `npm run dev:api` | Start Go backend with Air live reload (port 8080) |
+| `npm run dev:api` | Start NestJS backend (watch mode, port 8080) |
 | `npm run dev:web` | Start React Vite dev server (port 5173) |
 | `npm run stop` | Stop and free all dev ports (8080 & 5173) |
 | `npm run stop:api` | Free port 8080 |
 | `npm run stop:web` | Free port 5173 |
 | `npm run build` | Build all apps |
-| `npm run build:api` | Build Go binary (`apps/api/bin/server`) |
+| `npm run build:api` | Build NestJS backend (`apps/api-nest/dist`) |
 | `npm run build:web` | Build React production bundle |
 | `npm run test` | Run tests across all workspaces |
 | `npm run lint` | Lint all workspaces |

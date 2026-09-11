@@ -8,27 +8,31 @@ import { UnauthorizedException } from '../shared/errors.js';
 /**
  * Verifies Firebase ID tokens using the Admin SDK.
  *
- * Mirrors `apps/api/internal/auth/firebase.go`. The app is initialised once on
- * first use; a missing or invalid credentials file disables auth rather than
- * crashing the process, matching the Go bootstrap behaviour.
+ * Mirrors `apps/api-legacy/internal/auth/firebase.go`. The app is initialised
+ * once on first use; missing credentials disable auth rather than crashing the
+ * process, matching the Go bootstrap behaviour.
  */
 @Injectable()
 export class FirebaseAuthProvider extends AuthProvider {
   private readonly logger = new Logger(FirebaseAuthProvider.name);
   private client?: Auth;
 
-  constructor(projectId?: string, credentialsPath?: string) {
+  constructor(
+    projectId?: string,
+    clientEmail?: string,
+    privateKey?: string,
+  ) {
     super();
-    if (!projectId || !credentialsPath) {
+    if (!projectId || !clientEmail || !privateKey) {
       this.logger.warn(
-        'Firebase not configured (FIREBASE_PROJECT_ID / FIREBASE_CREDENTIALS_PATH) — auth disabled',
+        'Firebase not configured (FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY) — auth disabled',
       );
       return;
     }
 
     try {
       const app: App = initializeApp({
-        credential: cert(credentialsPath),
+        credential: cert({ projectId, clientEmail, privateKey }),
         projectId,
       });
       this.client = getAuth(app);

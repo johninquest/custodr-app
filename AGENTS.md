@@ -17,8 +17,8 @@ Target: German/EU consumers. MVP phase — validating whether users will enter a
 |-------|--------|--------|
 | Frontend | React + TypeScript + Tailwind CSS | Decided |
 | UI Components | shadcn/ui (optional accelerator) | Decided |
-| Backend | Go (Echo) | Decided |
-| Database | SQLite (modernc.org/sqlite, pure Go driver) | Decided |
+| Backend | NestJS 12 (Drizzle ORM) | Decided |
+| Database | PostgreSQL 18 | Decided |
 | Authentication | Firebase Auth (behind internal interface) | Leaning |
 | Email | Mailjet / Postmark | Leaning |
 | Hosting | Hetzner VPS (EU-based) | Decided |
@@ -32,21 +32,21 @@ Target: German/EU consumers. MVP phase — validating whether users will enter a
 Group by **business capability**, NOT by technical layer:
 
 ```
-internal/
-├── auth/           (handler, service, repository, models)
-├── users/          (handler, service, repository, models)
-├── commitments/    (handler, service, repository, models, validator)
-├── reminders/      (handler, service, scheduler, repository, models)
-├── notifications/  (handler, service, provider, mailjet, models)
-├── jobs/           (worker)
-└── shared/         (config, database, logger, middleware, errors)
+apps/api-nest/src/
+├── auth/           (controller, guard, provider, decorator)
+├── users/          (controller, service, repository)
+├── contracts/      (controller, service, repository, money)
+├── reminders/      (controller)
+├── dashboard/      (controller)
+├── db/             (Drizzle schema, db module)
+└── shared/         (errors, pagination, ids)
 ```
 
 **Avoid** flat technical folders like `handlers/`, `services/`, `repositories/` at the top level.
 
 ### Request Flow
 
-`HTTP Request → Handler → Service → Repository → SQLite`
+`HTTP Request → Controller → Service → Repository → PostgreSQL`
 
 ### Key Abstractions
 
@@ -75,13 +75,15 @@ A commitment is any recurring obligation with a cost, date, renewal cycle, expir
 Docker Compose Stack
 ├── traefik     (reverse proxy, TLS termination)
 ├── frontend    (React static build)
-├── api         (backend API + SQLite database file on a mounted volume)
+├── api         (NestJS backend API + PostgreSQL database)
 └── worker      (background jobs / reminder scheduler — same codebase, different role)
 ```
 
 Routing: `app.example.com` (frontend), `api.example.com` (API).
 
-SQLite is a file on disk, not a separate service. The database file lives on a mounted Docker volume and is shared between `api` and `worker` (SQLite supports concurrent readers + a single writer, which fits MVP load).
+PostgreSQL is a separate service in the compose stack. The database is accessed
+through Drizzle ORM over the `pg` driver; encryption at rest is handled at the
+filesystem level.
 
 ## MVP Scope Boundaries
 
@@ -95,7 +97,7 @@ SQLite is a file on disk, not a separate service. The database file lives on a m
 2. **No overengineering** — no microservices, CQRS, event sourcing, or Kubernetes during MVP
 3. **No document storage** — structured data only for MVP
 4. **Email deliverability is business-critical** — reminders must be delivered reliably; self-hosted email is ruled out
-5. **SQLite backups from day one** — daily copies of the database file stored off-host with periodic restore testing. Encryption at rest is handled at the filesystem level (LUKS/dm-crypt on Hetzner VPS); backup files are encrypted (e.g. `age`/`gpg`) before upload
+5. **Database backups from day one** — daily copies of the PostgreSQL database stored off-host with periodic restore testing. Encryption at rest is handled at the filesystem level (LUKS/dm-crypt on Hetzner VPS); backup files are encrypted (e.g. `age`/`gpg`) before upload
 6. **REST + JSON API** with OpenAPI documentation from early on
 7. **Never touch credentials** — coding agents/LLMs must never read or write `.env` files or any file containing secrets (e.g. `firebase-service-account.json`, `*.pem`, `*.key`). The human handles these files; agents stop and ask instead.
 
@@ -108,7 +110,7 @@ This project uses a lightweight agentic engineering setup: a fixed process loop,
 Before writing any code, consult these contract documents:
 
 - **[api_spec.md](docs/api_spec.md)** — Complete API contract: endpoints, request/response schemas, validation rules, error formats, pagination conventions
-- **[schema.md](docs/schema.md)** — SQLite database schema: tables, columns, constraints, indexes, relationships
+- **[schema.md](docs/schema.md)** — PostgreSQL database schema: tables, columns, constraints, indexes, relationships
 
 Contracts are the source of truth. Never invent endpoint or table shapes in code. If the contract is wrong or missing, **update the contract first**, then implement. Cross-referencing both contracts eliminates structural mismatches between frontend and backend.
 
@@ -130,10 +132,10 @@ Every feature follows the same three-step loop:
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|
 | **architect** | Architecture and system design reviewer (read-only) | Reviewing code structure, module organization, abstraction layers, or architectural decisions. Also authors and reviews entries in `docs/architectural-change-logs/` |
-| **backend** | Go and Echo backend specialist | Implementing API endpoints, database operations, background jobs, or middleware |
+| **backend** | NestJS backend specialist | Implementing API endpoints, database operations, background jobs, or middleware |
 | **frontend** | React and TypeScript frontend specialist | Building React components, implementing UI features, styling with Tailwind CSS, or integrating with backend API |
-| **tester** | Test generation specialist | Creating unit tests, integration tests, or improving test coverage for Go backend or React frontend |
-| **reviewer** | Code quality and best practices reviewer (read-only) | Reviewing Go or TypeScript code for idioms, security, performance, and maintainability |
+| **tester** | Test generation specialist | Creating unit tests, integration tests, or improving test coverage for NestJS backend or React frontend |
+| **reviewer** | Code quality and best practices reviewer (read-only) | Reviewing NestJS (TypeScript) code for idioms, security, performance, and maintainability |
 
 Select the appropriate agent from the agent picker in VS Code, or let Copilot delegate based on the task description.
 
@@ -160,7 +162,8 @@ Skills are on-demand multi-step workflows. Only two are part of the per-feature 
 | **quality-playbook** | Comprehensive quality audit | Quarterly or pre-release, not per-feature — heavy multi-phase audit with requirements derivation and spec audit |
 | **create-specification** | Structured specification writing | Ad-hoc, when creating a new AI-ready spec |
 
-> **Note:** The `postgresql-code-review` skill exists in the repo but is **not advertised** — the database is SQLite, not PostgreSQL. It can be invoked directly if ever relevant.
+> **Note:** The `postgresql-code-review` skill exists in the repo. The database is
+> PostgreSQL, so it is directly relevant; invoke it for schema/query reviews.
 
 ### Hooks (Automated Validation)
 
@@ -168,8 +171,8 @@ Two hooks, kept deliberately light. The `pre-tool-use` deny-lists from earlier s
 
 | Hook | When | What It Does |
 |------|------|--------------|
-| **post-tool-use** | After writing code | Runs formatters (gofmt, goimports, Prettier, ESLint) — free, zero-risk |
-| **stop** | Before completing a task | Build + test + lint gate: Go build, Go test, golangci-lint, tsc, frontend tests, ESLint. Degrades gracefully (skips with a warning) if a tool isn't installed |
+| **post-tool-use** | After writing code | Runs formatters (Prettier, ESLint, oxlint) — free, zero-risk |
+| **stop** | Before completing a task | Build + test + lint gate: Nest build, Vitest, oxlint, tsc, frontend tests, ESLint. Degrades gracefully (skips with a warning) if a tool isn't installed |
 
 ### File-Specific Instructions
 
@@ -177,7 +180,7 @@ Auto-attached guidelines for different file types:
 
 | Instruction File | Applies To | Key Guidelines |
 |-----------------|------------|----------------|
-| **go-backend.instructions.md** | `**/*.go, **/go.mod, **/go.sum` | Echo patterns, domain-driven architecture, error handling, structured logging, dependency injection, SQLite migrations |
+| **go-backend.instructions.md** | `**/*.go, **/go.mod, **/go.sum` | Applies only to the archived Go backend under `apps/api-legacy`; dormant for new work |
 | **react-frontend.instructions.md** | `**/*.tsx, **/*.ts, **/*.jsx, **/*.js` | TypeScript strict mode, React hooks, Tailwind CSS, form handling, API integration, accessibility |
 | **testing.instructions.md** | `**/*_test.go, **/*.test.ts, **/*.test.tsx, **/*.spec.ts, **/*.spec.tsx` | Table-driven tests, coverage targets, mocking patterns, test organization |
 | **api-contracts.instructions.md** | `**/handlers/**/*.go, **/services/**/*.go, **/repositories/**/*.go, **/models/**/*.go, **/api/**/*.ts, **/api/**/*.tsx` | Cross-reference `api_spec.md` and `schema.md` before writing handlers/services/repos/models |
@@ -221,7 +224,7 @@ Updating contracts first ensures agents generate code that matches the new requi
 
 ```bash
 npm run dev          # Start all dev servers in parallel (API on :8080, Web on :5173)
-npm run dev:api      # Start Go API only (with Air live reload)
+npm run dev:api      # Start NestJS API only (watch mode)
 npm run dev:web      # Start React Web only (with Vite)
 npm run stop         # Stop and free all dev ports (8080 & 5173)
 npm run stop:api     # Free port 8080
@@ -231,13 +234,13 @@ npm run test         # Run all tests
 npm run lint         # Lint all apps
 ```
 
-### Backend (apps/api/)
+### Backend (apps/api-nest/)
 
 ```bash
-npm run dev --workspace=api      # Start development server (Air live reload)
-npm run build --workspace=api    # Build binary
-npm run test --workspace=api     # Run tests
-npm run lint --workspace=api     # Run golangci-lint
+npm run dev --workspace=api-nest     # Start dev server (watch mode)
+npm run build --workspace=api-nest   # Build (nest build)
+npm run test --workspace=api-nest    # Run tests (Vitest)
+npm run lint --workspace=api-nest    # Run oxlint
 ```
 
 ### Frontend (apps/web/)
@@ -258,8 +261,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build  # Dev
 
 ## Pitfalls to Avoid
 
-- **Go project structure risk**: Without discipline, Go codebases become messy. Enforce domain-based module structure from the start.
-- **Firebase Auth lock-in**: Always abstract behind internal interface. GDPR concerns may require migration later.
+- **Firebase Auth lock-in**: Always abstract behind the `AuthProvider` interface. GDPR concerns may require migration later.
 - **User input friction**: Commitment entry forms must be fast (< 1 minute per commitment). This is the biggest MVP business risk.
 - **Premature connector frameworks**: Do not build integration abstractions for BiPRO/Open Banking/etc. during MVP.
 - **Agents touching secret files**: Never let a coding agent read or write `.env` files, service-account JSONs, or private keys. Keep credentials human-owned.

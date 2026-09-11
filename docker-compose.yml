@@ -27,22 +27,23 @@ services:
       start_period: 10s
 
   # ============================================
-  # Go Backend API
+  # NestJS Backend API
   # ============================================
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/api-nest/Dockerfile
     container_name: custodr-app-api
     restart: unless-stopped
     ports:
       - "${API_PORT:-8080}:8080"
     environment:
-      - SERVER_HOST=0.0.0.0
-      - SERVER_PORT=8080
+      - NODE_ENV=production
+      - PORT=8080
       - DATABASE_URL=postgres://${POSTGRES_USER:-pguser}:${POSTGRES_PASSWORD:-pgpassword}@postgres:5432/${POSTGRES_DB:-pgdb}?sslmode=disable
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
-      - FIREBASE_CREDENTIALS_PATH=/app/firebase-service-account.json
+      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL:-}
+      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY:-}
       - MAILJET_API_KEY=${MAILJET_API_KEY:-}
       - MAILJET_API_SECRET=${MAILJET_API_SECRET:-}
       - MAILJET_FROM_EMAIL=${MAILJET_FROM_EMAIL:-noreply@example.com}
@@ -52,9 +53,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      # Mount Firebase credentials if available
-      - ${FIREBASE_CREDENTIALS_PATH:-./firebase-service-account.json}:/app/firebase-service-account.json:ro
     networks:
       - custodr-app-network
     healthcheck:

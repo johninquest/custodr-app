@@ -37,7 +37,8 @@ import { FirebaseAuthProvider } from './firebase.provider.js';
 
         return new FirebaseAuthProvider(
           projectId,
-          config.get<string>('FIREBASE_CREDENTIALS_PATH'),
+          config.get<string>('FIREBASE_CLIENT_EMAIL'),
+          config.get<string>('FIREBASE_PRIVATE_KEY'),
         );
       },
     },
