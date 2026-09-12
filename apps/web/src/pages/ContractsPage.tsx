@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
+import { ContractForm } from '../components/contracts/ContractForm';
 import { contractsApi } from '../services/api';
 import type { AuditEntry, Contract, ContractCategory, ContractShare } from '../types';
 
@@ -48,8 +49,20 @@ function formatDate(dateString: string): string {
   );
 }
 
-function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`bg-surface rounded-card border border-border ${className}`}>{children}</div>;
+function Card({
+  children,
+  className = '',
+  id,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  id?: string;
+}) {
+  return (
+    <div id={id} className={`bg-surface rounded-card border border-border ${className}`}>
+      {children}
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -64,13 +77,20 @@ function ContractsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Contract | null>(null);
   const [tab, setTab] = useState<DetailTab>('details');
+  const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
+  const load = () =>
     contractsApi
       .list()
-      .then((res) => setContracts(res.data))
+      .then((res) => {
+        setContracts(res.data);
+        setError(null);
+      })
       .catch(() => setError('Failed to load contracts'))
       .finally(() => setLoading(false));
+
+  useEffect(() => {
+    void load();
   }, []);
 
   if (loading) {
@@ -91,12 +111,27 @@ function ContractsPage() {
         <h2 className="text-xl font-semibold text-text">Contracts</h2>
         <button
           type="button"
+          onClick={() => setCreating((open) => !open)}
+          aria-expanded={creating}
+          aria-controls="contract-create-panel"
           className="inline-flex items-center gap-2 rounded-btn bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
         >
-          <Icon name="list" size={16} className="text-white" />
-          Add contract
+          <Icon name={creating ? 'close' : 'plus'} size={16} className="text-white" />
+          {creating ? 'Cancel' : 'Add contract'}
         </button>
       </div>
+
+      {creating && (
+        <Card className="p-5" id="contract-create-panel">
+          <ContractForm
+            onCreated={async () => {
+              setCreating(false);
+              await load();
+            }}
+            onCancel={() => setCreating(false)}
+          />
+        </Card>
+      )}
 
       {contracts.length === 0 ? (
         <Card className="p-10 text-center">

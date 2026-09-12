@@ -114,25 +114,21 @@ services:
     ports:
       - "127.0.0.1:${WEB_PORT:-5173}:5173"
     volumes:
-      - ./apps/web/src:/app/apps/web/src
-      - ./apps/web/public:/app/apps/web/public
-      - ./apps/web/index.html:/app/apps/web/index.html
+      # Mount the whole app, not individual paths: Vite reads its config from
+      # apps/web/.env (and .env.development / .env.production), which the root
+      # .dockerignore deliberately keeps out of the build context. Mounting the
+      # directory lets the container read those files from the host instead of
+      # duplicating their values into this compose file.
+      - ./apps/web:/app/apps/web
       # Preserve the image's Linux node_modules (see the api service for why).
       - /app/apps/web/node_modules
       - /app/node_modules
     environment:
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api/v1}
-      # Firebase web config. These are BUILD/RUNTIME values for Vite and are
-      # public by design (they ship inside the JS bundle). They are passed
-      # explicitly because the root .dockerignore excludes apps/web/.env, so the
-      # container cannot read that file. Compose substitutes them from the root
-      # .env (or the surrounding shell); unset values become empty strings.
-      - VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY:-}
-      - VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN:-}
-      - VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID:-}
-      - VITE_FIREBASE_STORAGE_BUCKET=${VITE_FIREBASE_STORAGE_BUCKET:-}
-      - VITE_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID:-}
-      - VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID:-}
+      # Vite exposes VITE_* from the process env, and process env WINS over the
+      # .env files. Only set what must differ inside the container.
+      # Inside this container `localhost` is the web container itself, so the
+      # Vite dev proxy must target the API service by name.
+      - VITE_PROXY_TARGET=http://api:8080
     networks:
       - custodr-app-network
     healthcheck:

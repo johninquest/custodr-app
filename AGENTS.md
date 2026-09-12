@@ -158,12 +158,20 @@ Skills are on-demand multi-step workflows. Only two are part of the per-feature 
 | Skill | Purpose | When to Use |
 |-------|---------|-------------|
 | **webapp-testing** | Playwright-based browser testing | Verifying frontend functionality, debugging UI behavior, capturing screenshots |
+| **ui-ux-expert** | Design-system guidance (tokens, spacing, motion, a11y) | Any UI work — screens, components, styling. Palette lives in `apps/web/tailwind.config.js` |
 | **security-review** | AI-powered security scanner | Scanning for injection flaws, auth/access control bugs, secrets exposure, insecure dependencies |
 | **quality-playbook** | Comprehensive quality audit | Quarterly or pre-release, not per-feature — heavy multi-phase audit with requirements derivation and spec audit |
 | **create-specification** | Structured specification writing | Ad-hoc, when creating a new AI-ready spec |
+| **clean-code** | Clean Code principles (Robert C. Martin) | Refactoring working code into clean code |
+| **react-expert** | React 18+ patterns, hooks, performance | Building or debugging React components and hooks |
+| **firebase-auth-basics** | Firebase Authentication setup and usage | Wiring sign-in, user management, or auth rules |
 
 > **Note:** The `postgresql-code-review` skill exists in the repo. The database is
 > PostgreSQL, so it is directly relevant; invoke it for schema/query reviews.
+>
+> **Palette authority:** `apps/web/tailwind.config.js` is the single source of
+> truth for colour tokens. Skills and instructions must reference it rather than
+> restating hex values, which is how they drifted previously.
 
 ### Hooks (Automated Validation)
 

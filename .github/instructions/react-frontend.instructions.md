@@ -31,15 +31,15 @@ Build accessible, performant React applications with TypeScript and Tailwind CSS
 
 ```typescript
 // GOOD - explicit types
-interface Commitment {
+interface Contract {
   id: string;
   name: string;
   cost: number;
   currency: string;
-  status: CommitmentStatus;
+  status: ContractStatus;
 }
 
-type CommitmentStatus = 'active' | 'cancelled' | 'expired' | 'paused' | 'review_needed';
+type ContractStatus = 'active' | 'cancelled' | 'expired' | 'paused' | 'review_needed';
 
 function formatCost(amount: number, currency: string): string {
   return new Intl.NumberFormat('de-DE', {
@@ -56,120 +56,81 @@ function processData(data: any): any {
 
 ### Type Definitions
 
-Organize types in dedicated files:
-
-```
-src/
-├── types/
-│   ├── commitment.ts
-│   ├── reminder.ts
-│   ├── user.ts
-│   └── api.ts
-├── components/
-└── hooks/
-```
+API types live in a single file, `apps/web/src/types/index.ts`, mirroring
+`docs/api_spec.md`. Import from there with a **relative** path — there is no
+`@/` path alias configured in `apps/web/tsconfig.json`.
 
 ```typescript
-// src/types/commitment.ts
-export interface Commitment {
-  id: string;
-  user_id: string;
-  name: string;
-  category: CommitmentCategory;
-  provider: string;
-  start_date: string; // ISO 8601 date
-  renewal_date: string;
-  cancellation_deadline?: string;
-  cost: number;
-  currency: string;
-  billing_frequency: BillingFrequency;
-  status: CommitmentStatus;
-  notes?: string;
-  created_at: string; // ISO 8601 timestamp
-  updated_at: string;
-}
+// Relative imports only - no '@/' alias exists in this project
+import type { Contract, ContractCategory } from '../types';
 
-export type CommitmentCategory =
+// Reuse the existing unions; do not redeclare them.
+export type ContractCategory =
   | 'insurance'
-  | 'streaming_subscription'
-  | 'software_subscription'
-  | 'mobile_contract'
-  | 'internet_contract'
   | 'electricity_contract'
   | 'gas_contract'
-  | 'gym_membership'
-  | 'banking_product'
-  | 'vehicle_obligation'
-  | 'healthcare_reminder'
-  | 'vaccination_reminder'
+  | 'mobile_contract'
+  | 'streaming_subscription'
   | 'other';
 
 export type BillingFrequency = 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
 
-export type CommitmentStatus = 'active' | 'cancelled' | 'expired' | 'paused' | 'review_needed';
-
-export interface CreateCommitmentRequest {
-  name: string;
-  category: CommitmentCategory;
-  provider: string;
-  start_date: string;
-  renewal_date: string;
-  cancellation_deadline?: string;
-  cost: number;
-  currency: string;
-  billing_frequency: BillingFrequency;
-  notes?: string;
-}
+export type ContractStatus = 'active' | 'cancelled' | 'expired' | 'paused' | 'review_needed';
 ```
+
+Note the domain term is **contract**, not "commitment" — one generic commitment
+is modelled as a `contract` record. Do not add a parallel `Commitment` type, and
+do not invent categories: the six above are enforced by a database CHECK
+constraint and the API's Zod schemas.
 
 ## React Component Patterns
 
 ### Functional Components
 
 ```typescript
-import { Commitment } from '@/types';
+import type { Contract } from '../types';
 
-interface CommitmentCardProps {
-  commitment: Commitment;
+interface ContractCardProps {
+  contract: Contract;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
 }
 
-export function CommitmentCard({ 
-  commitment, 
+export function ContractCard({ 
+  contract, 
   onEdit, 
   onDelete 
-}: CommitmentCardProps) {
+}: ContractCardProps) {
   return (
-    <div className="rounded-lg border border-gray-200 p-4 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900">
-        {commitment.name}
+    <div className="rounded-card border border-border bg-surface p-4">
+      <h3 className="text-lg font-semibold text-text">
+        {contract.name}
       </h3>
-      <p className="text-sm text-gray-500">{commitment.provider}</p>
+      <p className="text-sm text-muted">{contract.provider}</p>
       
       <div className="mt-4 flex items-center justify-between">
-        <div className="text-2xl font-bold text-gray-900">
-          {formatCost(commitment.cost, commitment.currency)}
-          <span className="text-sm font-normal text-gray-500">
-            /{commitment.billing_frequency}
+        <div className="text-lg font-semibold text-text">
+          {formatCost(contract.cost, contract.currency)}
+          <span className="text-sm font-normal text-muted">
+            /{contract.billing_frequency}
           </span>
         </div>
         
         <div className="flex gap-2">
           {onEdit && (
             <button
-              onClick={() => onEdit(commitment.id)}
-              className="rounded-md bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
-              aria-label={`Edit ${commitment.name}`}
+              onClick={() => onEdit(contract.id)}
+              className="rounded-btn border border-border px-3 py-1 text-sm text-text hover:bg-muted/5"
+              aria-label={`Edit ${contract.name}`}
             >
               Edit
             </button>
           )}
           {onDelete && (
             <button
-              onClick={() => onDelete(commitment.id)}
-              className="rounded-md bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700"
-              aria-label={`Delete ${commitment.name}`}
+              onClick={() => onDelete(contract.id)}
+              className="rounded-btn bg-negative px-3 py-1 text-sm text-white hover:opacity-90"
+              aria-label={`Delete ${contract.name}`}
             >
               Delete
             </button>
@@ -183,149 +144,78 @@ export function CommitmentCard({
 
 ### Component Organization
 
+Components live under `src/components/`, grouped by domain, alongside the pages
+that use them in `src/pages/`:
+
 ```
-src/components/
-├── commitments/
-│   ├── CommitmentCard.tsx
-│   ├── CommitmentList.tsx
-│   ├── CommitmentForm.tsx
-│   └── index.ts
-├── dashboard/
-│   ├── Dashboard.tsx
-│   ├── UpcomingDeadlines.tsx
-│   └── CostOverview.tsx
-└── common/
-    ├── Button.tsx
-    ├── Input.tsx
-    └── LoadingSpinner.tsx
+src/
+├── components/
+│   ├── ui/               # Icon.tsx - shared primitives
+│   ├── layout/           # AppLayout.tsx
+│   └── contracts/        # ContractForm.tsx, ContractCard.tsx, ...
+├── pages/                # DashboardPage, ContractsPage, ProfilePage, AuthPage
+├── hooks/                # useAuth.tsx
+├── services/             # api.ts, firebase.ts
+└── types/                # index.ts - all API types
 ```
 
-### Container/Presentational Pattern
+Keep components small and focused. Extract a component when a page file
+approaches ~200 lines, as `ContractsPage.tsx` does with `ContractDetail`,
+`SharesTab`, and `ActivityTab`.
 
-```typescript
-// Presentational component - receives data via props
-interface CommitmentListProps {
-  commitments: Commitment[];
-  loading: boolean;
-  error: string | null;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
-}
+### Data fetching pattern
 
-export function CommitmentList({ 
-  commitments, 
-  loading, 
-  error, 
-  onEdit, 
-  onDelete 
-}: CommitmentListProps) {
-  if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage message={error} />;
-  
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {commitments.map(commitment => (
-        <CommitmentCard
-          key={commitment.id}
-          commitment={commitment}
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
-      ))}
-    </div>
-  );
-}
+This codebase does **not** use a container/presentational split or a
+`useCommitments`-style hook. Pages fetch directly in `useEffect` with local
+state, and pass data down as props. Follow that pattern:
 
-// Container component - manages state and data fetching
-export function CommitmentListContainer() {
-  const { commitments, loading, error, refetch } = useCommitments();
-  
-  const handleEdit = (id: string) => {
-    // Navigate to edit page
-  };
-  
-  const handleDelete = async (id: string) => {
-    await api.deleteCommitment(id);
-    refetch();
-  };
-  
-  return (
-    <CommitmentList
-      commitments={commitments}
-      loading={loading}
-      error={error}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-    />
-  );
-}
-```
+```tsx
+import { useEffect, useState } from 'react';
+import { contractsApi } from '../services/api';
+import type { Contract } from '../types';
 
-## React Hooks
-
-### Custom Hooks
-
-```typescript
-// src/hooks/useCommitments.ts
-import { useState, useEffect } from 'react';
-import { api } from '@/lib/api';
-import { Commitment } from '@/types';
-
-interface UseCommitmentsResult {
-  commitments: Commitment[];
-  loading: boolean;
-  error: string | null;
-  refetch: () => Promise<void>;
-}
-
-export function useCommitments(): UseCommitmentsResult {
-  const [commitments, setCommitments] = useState<Commitment[]>([]);
+function ContractsPage() {
+  const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCommitments = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await api.getCommitments();
-      setCommitments(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchCommitments();
+    contractsApi
+      .list()
+      .then((res) => setContracts(res.data))
+      .catch(() => setError('Failed to load contracts'))
+      .finally(() => setLoading(false));
   }, []);
 
-  return {
-    commitments,
-    loading,
-    error,
-    refetch: fetchCommitments,
-  };
+  if (loading) return <p className="text-sm text-muted">Loading contracts…</p>;
+  if (error) return <p className="text-sm text-muted">{error}</p>;
+  // ...
 }
 ```
+
+Extract a hook only when the same fetch is genuinely reused in several places.
+Error handling in components is intentionally coarse — a short user-facing
+message, not the raw API error.
+
+## React Hooks
 
 ### Hook Rules
 
 - **Never call hooks conditionally** — hooks must be called in the same order every render
 - **Complete dependency arrays** — include all values from component scope that change over time
-- **Use useCallback for callbacks** passed to child components to prevent unnecessary re-renders
-- **Use useMemo for expensive computations** that don't need to run every render
+- **Use `useCallback` for callbacks** passed to child components to prevent unnecessary re-renders
+- **Use `useMemo` for expensive computations** that don't need to run every render
 
 ```typescript
 // GOOD - complete dependency array
 useEffect(() => {
-  document.title = `Commitments (${commitments.length})`;
-}, [commitments.length]);
+  document.title = `Contracts (${contracts.length})`;
+}, [contracts.length]);
 
 // BAD - missing dependency
 useEffect(() => {
-  document.title = `Commitments (${commitments.length})`;
-}, []); // Missing commitments dependency
+  document.title = `Contracts (${contracts.length})`;
+}, []); // Missing contracts dependency
 
 // GOOD - memoized callback
 const handleClick = useCallback(() => {
@@ -334,107 +224,180 @@ const handleClick = useCallback(() => {
 
 // GOOD - memoized computation
 const totalCost = useMemo(() => {
-  return commitments.reduce((sum, c) => sum + c.cost, 0);
-}, [commitments]);
+  return contracts.reduce((sum, c) => sum + c.cost, 0);
+}, [contracts]);
 ```
 
-## Form Handling (react-hook-form + zod)
+## Form Handling
 
-```typescript
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+**There is no form library installed.** `react-hook-form`, `@hookform/resolvers`
+and `zod` are NOT dependencies of `apps/web`. Do not import them. Use controlled
+inputs with `useState`, which is the established pattern in this codebase (see
+`SharesTab` in `apps/web/src/pages/ContractsPage.tsx`).
 
-const commitmentSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(255),
-  category: z.enum(['insurance', 'streaming_subscription', /* ... */]),
-  provider: z.string().min(1, 'Provider is required'),
-  cost: z.number().positive('Cost must be positive'),
-  billing_frequency: z.enum(['monthly', 'quarterly', 'annual']),
-  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
-  renewal_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
-  cancellation_deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format').optional(),
-  notes: z.string().max(1000).optional(),
-});
+Server-side validation is authoritative — it lives in the API's Zod schemas
+(e.g. `createSchema` in `apps/api-nest/src/contracts/contracts.controller.ts`)
+and mirrors `docs/api_spec.md`. Client-side checks exist only to give fast
+feedback; always handle the API's `400` response too.
 
-type CommitmentFormData = z.infer<typeof commitmentSchema>;
+```tsx
+import { useState } from 'react';
+import type { Contract, ContractCategory } from '../types';
 
-interface CommitmentFormProps {
-  onSubmit: (data: CommitmentFormData) => Promise<void>;
-  initialData?: Partial<CommitmentFormData>;
+interface ContractFormProps {
+  onSubmit: (data: Partial<Contract>) => Promise<void>;
+  onCancel: () => void;
 }
 
-export function CommitmentForm({ onSubmit, initialData }: CommitmentFormProps) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<CommitmentFormData>({
-    resolver: zodResolver(commitmentSchema),
-    defaultValues: initialData,
-  });
+export function ContractForm({ onSubmit, onCancel }: ContractFormProps) {
+  const [name, setName] = useState('');
+  const [cost, setCost] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+
+  const validate = (): boolean => {
+    const next: Record<string, string> = {};
+    if (!name.trim()) next.name = 'Name is required';
+    const amount = Number(cost);
+    if (!cost.trim() || Number.isNaN(amount) || amount <= 0) {
+      next.cost = 'Cost must be a positive number';
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!validate()) return;
+    setBusy(true);
+    try {
+      // Send cost as a DECIMAL (15.99), not cents. The API converts to cents.
+      await onSubmit({ name: name.trim(), cost: Number(cost) });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="name" className="block text-sm font-medium text-text">
           Name
         </label>
         <input
           id="name"
-          {...register('name')}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          aria-invalid={Boolean(errors.name)}
+          aria-describedby={errors.name ? 'name-error' : undefined}
+          className={`mt-1 block w-full rounded-btn border bg-background px-3 py-2 text-sm text-text focus:outline-none ${
+            errors.name ? 'border-negative' : 'border-border focus:border-primary'
+          }`}
         />
         {errors.name && (
-          <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+          <p id="name-error" className="mt-1 text-sm text-negative">
+            {errors.name}
+          </p>
         )}
       </div>
 
       <div>
-        <label htmlFor="cost" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="cost" className="block text-sm font-medium text-text">
           Cost (EUR)
         </label>
         <input
           id="cost"
           type="number"
           step="0.01"
-          {...register('cost', { valueAsNumber: true })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          min="0"
+          value={cost}
+          onChange={(e) => setCost(e.target.value)}
+          aria-invalid={Boolean(errors.cost)}
+          aria-describedby={errors.cost ? 'cost-error' : undefined}
+          className={`mt-1 block w-full rounded-btn border bg-background px-3 py-2 text-sm text-text focus:outline-none ${
+            errors.cost ? 'border-negative' : 'border-border focus:border-primary'
+          }`}
         />
         {errors.cost && (
-          <p className="mt-1 text-sm text-red-600">{errors.cost.message}</p>
+          <p id="cost-error" className="mt-1 text-sm text-negative">
+            {errors.cost}
+          </p>
         )}
       </div>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-      >
-        {isSubmitting ? 'Saving...' : 'Save Commitment'}
-      </button>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={busy}
+          className="rounded-btn bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+        >
+          {busy ? 'Saving…' : 'Save'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-btn border border-border px-4 py-2 text-sm text-text hover:bg-muted/5"
+        >
+          Cancel
+        </button>
+      </div>
     </form>
   );
 }
 ```
 
+**Cost units:** the API accepts a **decimal** amount (`15.99`), not cents. It
+converts to integer cents server-side (`decimalToCents`). Never multiply by 100
+in the client — that produces a 100× error.
+
 ## Tailwind CSS Patterns
 
-### Utility-First Approach
+### Semantic tokens, not raw palettes
 
-Use Tailwind utility classes directly — no custom CSS, no `@apply`:
+The theme is defined in `apps/web/tailwind.config.js`, which is the single
+source of truth. Use its **semantic** token names — never raw Tailwind palette
+classes (`blue-*`, `gray-*`, `red-*`), and never arbitrary values like
+`text-[#123456]`.
 
 ```tsx
-// GOOD - utility classes
+// GOOD - semantic tokens from tailwind.config.js
+<div className="rounded-card border border-border bg-surface p-6">
+  <h2 className="text-xl font-semibold text-text">Dashboard</h2>
+  <p className="text-sm text-muted">Supporting copy</p>
+</div>
+
+// BAD - raw palette / arbitrary values
 <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
   <h2 className="text-xl font-semibold text-gray-900">Dashboard</h2>
 </div>
-
-// BAD - custom CSS
-<div className="card">
-  <h2 className="card-title">Dashboard</h2>
-</div>
 ```
+
+Available tokens: `background`, `surface`, `text`, `muted`, `border`,
+`primary`(+`-subtle`), `positive`(+`-subtle`), `negative`(+`-subtle`),
+`category-*` (insurance, electricity, gas, mobile, streaming, other),
+`warning`. Radii: `rounded-btn` (10px), `rounded-card` (12px). Font: IBM Plex
+Sans. Adding a colour means editing `tailwind.config.js` — not the component.
+
+### No shadows
+
+Shadows are disabled globally in `apps/web/src/index.css`
+(`* { box-shadow: none !important; }`). Separate surfaces with `bg-surface` vs
+`bg-background` and 1px `border-border` outlines instead.
+
+### `@apply` is permitted in the base layer
+
+Utility classes in JSX are the default, but `@apply` is used for global base
+styles in `apps/web/src/index.css`:
+
+```css
+@layer base {
+  body {
+    @apply bg-background text-text font-sans antialiased;
+  }
+}
+```
+
+Keep `@apply` confined to that base layer; don't introduce component classes.
 
 ### Responsive Design
 
@@ -442,8 +405,8 @@ Mobile-first approach with responsive prefixes:
 
 ```tsx
 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-  {commitments.map(commitment => (
-    <CommitmentCard key={commitment.id} commitment={commitment} />
+  {contracts.map(contract => (
+    <ContractCard key={contract.id} contract={contract} />
   ))}
 </div>
 ```
@@ -451,18 +414,15 @@ Mobile-first approach with responsive prefixes:
 ### State Variants
 
 ```tsx
-<button className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+<button className="rounded-btn bg-primary px-4 py-2 text-white hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150">
   Submit
 </button>
 ```
 
-### Dark Mode
+### No dark mode
 
-```tsx
-<div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-  <h1 className="text-2xl font-bold">Dashboard</h1>
-</div>
-```
+The app is light-mode only. Do not add `dark:` variants or `darkMode` config —
+the palette is designed for a single light theme.
 
 ### Common Patterns
 
@@ -485,88 +445,66 @@ Mobile-first approach with responsive prefixes:
   <div>Cell 2</div>
 </div>
 
-// Conditional classes
-<div className={cn(
-  'rounded-lg p-4',
-  isActive && 'bg-blue-50 border-blue-200',
-  !isActive && 'bg-gray-50 border-gray-200'
-)}>
+// Conditional classes - use template literals
+<div className={`rounded-card border p-4 ${
+  isActive ? 'bg-primary-subtle border-primary' : 'bg-surface border-border'
+}`}>
 ```
 
 ## API Integration
 
-### Type-Safe API Client
+The API client already exists at `apps/web/src/services/api.ts`. It uses
+**axios** (not `fetch`) and has:
+- a request interceptor that attaches the Firebase ID token as a Bearer header
+- a response interceptor that signs out and redirects to `/auth` on `401`
+- typed helper objects: `contractsApi`, `consentsApi`, `usersApi`
+
+Extend that file rather than creating another client:
 
 ```typescript
-// src/lib/api.ts
-import { Commitment, CreateCommitmentRequest } from '@/types';
+import api from '../services/api';   // relative imports - no `@/` alias exists
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
-
-class ApiClient {
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const token = localStorage.getItem('auth_token');
-    
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...options?.headers,
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || `HTTP ${response.status}`);
-    }
-
-    return response.json();
-  }
-
-  async getCommitments(): Promise<Commitment[]> {
-    const response = await this.request<{ data: Commitment[] }>('/commitments');
-    return response.data;
-  }
-
-  async createCommitment(data: CreateCommitmentRequest): Promise<Commitment> {
-    return this.request<Commitment>('/commitments', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updateCommitment(id: string, data: Partial<Commitment>): Promise<Commitment> {
-    return this.request<Commitment>(`/commitments/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteCommitment(id: string): Promise<void> {
-    await this.request(`/commitments/${id}`, { method: 'DELETE' });
-  }
+// Add to the relevant helper object in services/api.ts
+export const contractsApi = {
+  // ...
+  create: async (input: Partial<Contract>) => {
+    const { data } = await api.post<Contract>('/contracts', input)
+    return data
+  },
 }
-
-export const api = new ApiClient();
 ```
+
+Base URL comes from `import.meta.env.VITE_API_BASE_URL` (defaults to `/api/v1`,
+proxied to the API in development by `vite.config.ts`). **Never** use
+`process.env.NEXT_PUBLIC_*` — this is a Vite app, not Next.js.
 
 ### Error Handling
 
+Read the API's error envelope. The shape is `{ error: { code, message, details? } }`
+(typed as `APIError` in `src/types/index.ts`):
+
 ```typescript
+import axios from 'axios';
+import type { APIError } from '../types';
+
 try {
-  const commitment = await api.createCommitment(formData);
-  // Success handling
+  await contractsApi.create(input);
 } catch (error) {
-  if (error instanceof Error) {
-    // Show user-friendly error message
-    setError(error.message);
+  if (axios.isAxiosError(error) && error.response?.status === 400) {
+    const body = error.response.data as APIError;
+    // Map field-level errors back onto the form
+    for (const detail of body.error.details ?? []) {
+      setFieldError(detail.field, detail.message);
+    }
+    setMessage(body.error.message);
   } else {
-    // Unexpected error
-    setError('An unexpected error occurred');
+    setMessage('An unexpected error occurred');
   }
 }
 ```
+
+Note: after a `401` the response interceptor signs the user out and redirects,
+so a `401` branch is usually unnecessary in component code.
 
 ## Accessibility
 
@@ -577,7 +515,7 @@ try {
 <nav aria-label="Main navigation">
   <ul>
     <li><a href="/dashboard">Dashboard</a></li>
-    <li><a href="/commitments">Commitments</a></li>
+    <li><a href="/contracts">Contracts</a></li>
   </ul>
 </nav>
 
@@ -600,8 +538,8 @@ try {
 ```tsx
 // Icon-only buttons need aria-label
 <button 
-  onClick={() => onDelete(id)}
-  aria-label={`Delete ${commitment.name}`}
+  onClick={() => onDelete(contract.id)}
+  aria-label={`Delete ${contract.name}`}
   className="p-2"
 >
   <TrashIcon className="h-5 w-5" />
@@ -649,8 +587,8 @@ try {
 ```typescript
 // Memoize expensive computations
 const totalCost = useMemo(() => {
-  return commitments.reduce((sum, c) => sum + c.cost, 0);
-}, [commitments]);
+  return contracts.reduce((sum, c) => sum + c.cost, 0);
+}, [contracts]);
 
 // Memoize callbacks passed to children
 const handleClick = useCallback((id: string) => {
@@ -658,7 +596,7 @@ const handleClick = useCallback((id: string) => {
 }, [onSelect]);
 
 // Memoize components that don't need to re-render
-const MemoizedCommitmentCard = React.memo(CommitmentCard);
+const MemoizedContractCard = React.memo(ContractCard);
 ```
 
 ### Code Splitting
@@ -680,108 +618,33 @@ function App() {
 
 ```tsx
 // Use stable, unique keys (not array index)
-{commitments.map(commitment => (
-  <CommitmentCard key={commitment.id} commitment={commitment} />
+{contracts.map(contract => (
+  <ContractCard key={contract.id} contract={contract} />
 ))}
-
-// For large lists, use virtualization
-import { FixedSizeList } from 'react-window';
-
-<FixedSizeList
-  height={600}
-  itemCount={commitments.length}
-  itemSize={100}
-  width="100%"
->
-  {({ index, style }) => (
-    <div style={style}>
-      <CommitmentCard commitment={commitments[index]} />
-    </div>
-  )}
-</FixedSizeList>
 ```
+
+`react-window` is not installed. Don't add virtualization for this app's list
+sizes — the contract list is paginated by the API (`page`/`limit`), so just
+render the current page.
 
 ## Testing
 
-### Component Tests (React Testing Library)
+**No frontend test infrastructure is installed.** `apps/web` has no test runner
+and no `@testing-library/*` packages, and there are no `*.test.tsx` /
+`*.spec.tsx` files. Do not write test files against packages that are not
+installed, and do not import `@testing-library/react` or use `jest.*` — neither
+is available.
 
-```typescript
-import { render, screen, fireEvent } from '@testing-library/react';
-import { CommitmentCard } from './CommitmentCard';
+If you need frontend tests, that requires a separate decision and setup step
+(vitest + @testing-library/react + jsdom), added as real dependencies. Raise it
+rather than assuming.
 
-describe('CommitmentCard', () => {
-  const mockCommitment = {
-    id: '123',
-    name: 'Netflix',
-    category: 'streaming_subscription' as const,
-    provider: 'Netflix',
-    cost: 15.99,
-    currency: 'EUR',
-    status: 'active' as const,
-    billing_frequency: 'monthly' as const,
-    start_date: '2024-01-01',
-    renewal_date: '2025-01-01',
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
-    user_id: 'user-123',
-  };
+For verifying UI behaviour now, use the **`webapp-testing` skill** (Playwright)
+against the running dev server — that exercises the real app rather than a
+simulated DOM.
 
-  it('renders commitment name and cost', () => {
-    render(<CommitmentCard commitment={mockCommitment} />);
-    
-    expect(screen.getByText('Netflix')).toBeInTheDocument();
-    expect(screen.getByText('€15.99')).toBeInTheDocument();
-  });
-
-  it('calls onEdit when edit button clicked', () => {
-    const onEdit = jest.fn();
-    render(<CommitmentCard commitment={mockCommitment} onEdit={onEdit} />);
-    
-    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
-    
-    expect(onEdit).toHaveBeenCalledWith('123');
-  });
-
-  it('shows cancelled badge when status is cancelled', () => {
-    render(<CommitmentCard commitment={{ ...mockCommitment, status: 'cancelled' }} />);
-    
-    expect(screen.getByText('Cancelled')).toBeInTheDocument();
-  });
-});
-```
-
-### Hook Tests
-
-```typescript
-import { renderHook, waitFor } from '@testing-library/react';
-import { useCommitments } from './useCommitments';
-
-describe('useCommitments', () => {
-  it('fetches commitments on mount', async () => {
-    const mockCommitments = [{ id: '1', name: 'Netflix' }];
-    jest.spyOn(api, 'getCommitments').mockResolvedValue(mockCommitments);
-
-    const { result } = renderHook(() => useCommitments());
-
-    expect(result.current.loading).toBe(true);
-    
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-      expect(result.current.commitments).toEqual(mockCommitments);
-    });
-  });
-
-  it('handles error', async () => {
-    jest.spyOn(api, 'getCommitments').mockRejectedValue(new Error('Network error'));
-
-    const { result } = renderHook(() => useCommitments());
-
-    await waitFor(() => {
-      expect(result.current.error).toBe('Network error');
-    });
-  });
-});
-```
+The backend has a working Vitest setup (`apps/api-nest`, `*.spec.ts`) — see
+`testing.instructions.md` for that.
 
 ## Common Pitfalls to Avoid
 
@@ -790,6 +653,9 @@ describe('useCommitments', () => {
 - Stale closures in callbacks (capturing old state)
 - Direct state mutation (`state.value = 5` instead of `setState`)
 - Missing keys in lists or using array index as key
+- Raw Tailwind palette classes (`bg-blue-600`) instead of the semantic tokens in `tailwind.config.js`
+- Sending `cost` in cents — the API expects a decimal amount (`15.99`)
+- Importing with a `@/` alias — no such alias is configured; use relative paths
 - Unnecessary useEffect for state that could be derived from props
 - Prop drilling through many levels (use context instead)
 - Missing error boundaries for unhandled errors

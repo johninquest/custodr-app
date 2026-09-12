@@ -1,37 +1,41 @@
 ---
 name: ui-ux-expert
-description: Design system and UI/UX guidance for this fintech app's mobile-first interface, built around the "Baobab Green" calm/natural color theme. Use this skill whenever the user asks to design, build, style, mock up, or review any screen, component, or flow for this app — including requests like "build a screen for X", "make this component", "design the settings page", "how should the transaction list look", or any React/HTML/Figma-style UI work for this project, even if the user doesn't explicitly say "design system" or mention Baobab by name. Always consult this skill before writing UI code or making visual/layout decisions for this app, to keep colors, spacing, typography, and component patterns consistent with the established vision.
+description: Design system and UI/UX guidance for this app's mobile-first interface. Use this skill whenever the user asks to design, build, style, mock up, or review any screen, component, or flow for this app — including requests like "build a screen for X", "make this component", "design the settings page", "how should the contract list look", or any React/HTML/Figma-style UI work for this project, even if the user doesn't explicitly say "design system". Always consult this skill before writing UI code or making visual/layout decisions for this app, to keep spacing, typography, component patterns, and interaction conventions consistent. The authoritative colour palette lives in apps/web/tailwind.config.js — read it before choosing any colour.
 ---
 
-# Baobab Fintech UI — Design System
+# Fintech UI — Design System
 
-A calm, natural, soft-but-trustworthy design language for a mobile-first fintech app. Light mode only, flat surfaces, moderate rounding, minimal motion. When in doubt: quieter, not louder.
+A calm, soft-but-trustworthy design language for a mobile-first fintech app. Light mode only, flat surfaces, moderate rounding, minimal motion. When in doubt: quieter, not louder.
 
-## Design principles (the vision, in one paragraph)
+## Colour: `apps/web/tailwind.config.js` is the single source of truth
 
-This app should feel calm and human — the opposite of sterile enterprise fintech or hyper-gamified consumer apps. Money-related numbers are shown with the same visual weight as everything else, not blown up for drama. Surfaces are flat and separated by color/borders, never shadows. Corners are softly rounded, never sharp and never pill-shaped. Motion is subtle and settled — nothing bounces. One primary action per screen, always in solid green. Green also does double duty as the "positive" signal (income, growth, success), with a separate muted red reserved strictly for negative/warning states.
+Do not hard-code hex values, and do not introduce Tailwind default palettes
+(`blue-600`, `gray-900`, `red-500`, etc.). This app uses **semantic** colour
+names defined in `apps/web/tailwind.config.js`. Read that file and use its
+tokens by name.
 
-## Color tokens
+The token set, for reference only — the config file wins if they ever disagree:
 
-| Token | Hex | Usage |
-|---|---|---|
-| `color-background` | `#F8F9F4` | App background, screen canvas. Never pure white. |
-| `color-text` | `#202520` | Primary text. Never pure black. |
-| `color-primary` | `#3E7655` | Primary buttons, active tab, links, key icons, brand accent |
-| `color-positive` | `#277A55` | Positive amounts, success states, "up" trends |
-| `color-negative` | `#B54B47` | Negative amounts, errors, destructive actions, "down" trends |
-
-**Derived tones** (generate these programmatically, don't hand-pick new hues):
-- `color-text-muted`: `color-text` at ~60% opacity — secondary text, timestamps, helper copy
-- `color-border`: `color-text` at ~12% opacity — dividers, card outlines, input borders
-- `color-surface`: `color-background` mixed slightly toward white (e.g. `#FCFDFA`) — for cards/sheets that need to sit one step above the canvas, without using a shadow
-- `color-primary-subtle`: `color-primary` at ~10-12% opacity as a fill — for tags, selected states, chip backgrounds
-- `color-positive-subtle` / `color-negative-subtle`: same treatment, for amount badges
+| Token (Tailwind class) | Usage |
+|---|---|
+| `bg-background` | App canvas |
+| `bg-surface` | Cards, sheets, inputs sitting one step above the canvas |
+| `text-text` | Primary text |
+| `text-muted` | Secondary text, timestamps, helper copy |
+| `border-border` | Dividers, card outlines, input borders |
+| `bg-primary` / `text-primary` / `border-primary` | Primary buttons, active tab, links, key icons |
+| `bg-primary-subtle` | Tinted fill for tags, avatars, selected states |
+| `positive` / `positive-subtle` | Positive amounts, success states |
+| `negative` / `negative-subtle` | Errors, destructive actions, negative amounts |
+| `category-{insurance,electricity,gas,mobile,streaming,other}` (+ `-subtle`) | Per-category identity tints |
+| `warning` (+ `-subtle`) | Urgency emphasis (e.g. renewals within 7 days) |
 
 **Rules:**
-- No pure `#000000` or `#FFFFFF` anywhere in the UI — it breaks the calm, low-strain feel of the palette.
-- Positive/negative colors are reserved for their semantic meaning only. Don't reuse `color-negative` for generic emphasis, and don't reuse `color-positive` as a decorative accent — it should always mean "good/up/success" so it stays trustworthy.
-- Maintain WCAG AA contrast (4.5:1 body text, 3:1 large text/UI components) for every text/background pairing. `color-text` on `color-background` and white text on `color-primary`/`color-negative` both pass comfortably — verify any new pairing before shipping it.
+- Never use raw Tailwind palette colours (`blue-*`, `gray-*`, `slate-*`, `red-*`). Use the semantic tokens.
+- `positive` / `negative` are reserved for their semantic meaning. Don't reuse `negative` for generic emphasis, and don't use `positive` as a decorative accent — it must always mean "good/up/success" so it stays trustworthy.
+- Add a new colour only by editing `tailwind.config.js`, never by writing an arbitrary value like `text-[#123456]` in a component.
+- Maintain WCAG AA contrast (4.5:1 body text, 3:1 large text/UI components) for every text/background pairing. Verify any new pairing before shipping it.
+- `category-*` and `warning` exist for their specific purposes; don't repurpose them as general accents.
 
 ## Typography
 
@@ -69,50 +73,55 @@ Line height: 1.4–1.5 for body text, 1.2 for titles/display. Left-align by defa
 ## Elevation — flat, no shadows
 
 Never use `box-shadow` for card/surface separation. Instead:
-- Use `color-surface` vs `color-background` for a subtle one-step lift
-- Use a 1px `color-border` outline when two adjacent surfaces are the same color and need a hard edge
-- Modals/sheets may use a very light scrim (`color-text` at ~30% opacity) behind them, but the sheet itself stays flat — no drop shadow
+- Use `bg-surface` vs `bg-background` for a subtle one-step lift
+- Use a 1px `border-border` outline when two adjacent surfaces are the same colour and need a hard edge
+- Modals/sheets may use a very light scrim (`text` at ~30% opacity) behind them, but the sheet itself stays flat — no drop shadow
+
+Note: `apps/web/src/index.css` enforces this globally with
+`* { box-shadow: none !important; }`, so shadow utilities are dead on arrival —
+don't reach for them.
 
 ## Iconography
 
-- Thin-line icons only, consistent stroke width (1.5–2px) across the entire app — never mix stroke weights or mix line icons with filled icons
-- Icons default to `color-text-muted`; switch to `color-primary` only when the icon is interactive/active (e.g. selected tab)
+- Thin-line icons only, consistent stroke width (1.5–2px) — never mix stroke weights, never mix line icons with filled icons
+- All icons live in `apps/web/src/components/ui/Icon.tsx`. Add new ones there rather than inlining `<svg>` in a page
+- Icons default to `text-muted`; switch to `text-primary` only when interactive/active (e.g. selected tab)
 - Icon size: 20px inline with text, 24px standalone tap targets (with adequate touch padding to reach 44px minimum tap area)
 
 ## Motion
 
 Subtle and minimal — this app never bounces or overshoots.
-- Duration: 150–200ms for micro-interactions (button press, toggle), 250–300ms for screen transitions
+- Duration: 150–200ms for micro-interactions (button press, toggle), 250–300ms for screen transitions. `duration-150` is the established default
 - Easing: standard ease-in-out or ease-out. No spring/bounce curves.
 - Prefer opacity + slight position fades over scale/bounce effects
 - Loading states: simple fade-in of content or a quiet skeleton pulse — no spinners with personality, no playful loaders
 
 ## Navigation
 
-Bottom tab bar, 3–5 items. Active tab = `color-primary` icon + label; inactive = `color-text-muted`. Tab bar sits on `color-surface` with a 1px top `color-border`, no shadow. Reserve a floating action button only if there's truly one dominant action app-wide (e.g. "Send money") — otherwise keep primary actions inline in each screen.
+Bottom tab bar on mobile, 3–5 items. Active tab = `text-primary` icon + label; inactive = `text-muted`. Tab bar sits on `bg-surface` with a 1px top border, no shadow. Reserve a floating action button only if there's truly one dominant action app-wide — otherwise keep primary actions inline in each screen.
 
 ## Core components
 
 **Buttons**
-- Primary: filled `color-primary`, white text, radius `10px`. One primary button per screen/section max.
-- Secondary: `color-border` outline, `color-text` label, transparent fill
-- Destructive: filled `color-negative`, white text — reserved for genuinely destructive actions (delete, close account), not general negative-amount contexts
-- Disabled: `color-text` at ~30% opacity, no color change to primary green
+- Primary: filled `bg-primary`, white text, radius `10px`. One primary button per screen/section max.
+- Secondary: `border-border` outline, `text-text` label, transparent fill
+- Destructive: filled `bg-negative`, white text — reserved for genuinely destructive actions (delete, close account), not general negative-amount contexts
+- Disabled: reduce opacity, no colour change to primary
 
 **Transaction / list rows**
-- Left: icon or merchant initial in a circle (`color-primary-subtle` fill)
+- Left: icon or initial in a circle (`bg-primary-subtle` fill)
 - Middle: `Body-strong` label + `Caption` metadata (date/category) stacked
-- Right: amount in `Body-strong`, colored `color-positive` or `color-negative` depending on sign — this is the one place amount color-coding does the "loud" work instead of size
-- Rows separated by `color-border` 1px divider, not cards-in-cards
+- Right: amount in `Body-strong`, coloured `text-positive` or `text-negative` depending on sign — this is the one place amount colour-coding does the "loud" work instead of size
+- Rows separated by a 1px `border-border` divider, not cards-in-cards
 
 **Balance / summary display**
-- Shown at `Title` size, `color-text` (not green, not oversized) — modest, equal footing with surrounding content, per the app's calm-not-flashy principle
-- Supporting trend text in `Caption`, using `color-positive`/`color-negative` for direction
+- Shown at `Title` size, `text-text` (not coloured, not oversized) — modest, equal footing with surrounding content, per the app's calm-not-flashy principle
+- Supporting trend text in `Caption`, using `text-positive`/`text-negative` for direction
 
 **Inputs**
-- `color-surface` background, `1px` `color-border`, radius `10px`
-- Focus state: border becomes `color-primary`, no glow/shadow
-- Error state: border becomes `color-negative`, helper text below in `color-negative`
+- `bg-background` (the app's convention — see `SharesTab` in `ContractsPage.tsx`), `1px` `border-border`, radius `10px`
+- Focus state: border becomes `border-primary`, no glow/shadow
+- Error state: border becomes `border-negative`, helper text below in `text-negative`
 
 **Badges / tags**
 - Pill-shaped is fine here (badges are the one exception to the no-pill rule), small `Label` text on `-subtle` background variants
@@ -120,23 +129,25 @@ Bottom tab bar, 3–5 items. Active tab = `color-primary` icon + label; inactive
 ## Accessibility checklist
 
 - [ ] Text/background contrast meets WCAG AA (4.5:1 body, 3:1 large text)
-- [ ] Don't rely on color alone for positive/negative — pair with `+`/`-` prefix or an icon for colorblind users
+- [ ] Don't rely on colour alone for positive/negative — pair with a `+`/`-` prefix or an icon for colourblind users
 - [ ] Tap targets minimum 44×44px even when the visual icon is smaller
-- [ ] Focus states are visible (border color change, not just color shift too subtle to notice)
+- [ ] Focus states are visible (border colour change, not a shift too subtle to notice)
+- [ ] Icon-only controls carry an accessible name (`aria-label` or `sr-only` text — see `CategoryBadge` in `ContractsPage.tsx`)
+- [ ] Form inputs have associated labels; validation errors are linked via `aria-describedby` and announced
 
 ## Mobile-first layout rules
 
 - Design at a 375–414px wide viewport first; scale up gracefully, don't design desktop-down
 - Single-column layouts by default; avoid multi-column grids except for small repeating elements (e.g. quick-action icons)
 - Sticky bottom tab bar + safe-area padding for iOS home indicator
-- Avoid horizontal scroll except for clearly-signaled carousels (e.g. cards, quick filters)
+- Avoid horizontal scroll except for clearly-signalled carousels (e.g. cards, quick filters)
 
 ## Quick self-check before shipping any screen
 
-- [ ] Uses only tokens from this file — no off-palette colors, no off-grid spacing, no new fonts
+- [ ] Uses only tokens from `apps/web/tailwind.config.js` — no raw Tailwind palette (`blue-*`, `gray-*`), no arbitrary `[#hex]` values, no off-grid spacing
 - [ ] No shadows anywhere
 - [ ] Corners are 10–12px, not sharp, not pill (except badges)
 - [ ] At most one filled primary button visible at a time
 - [ ] Balances/numbers are not oversized relative to body text
-- [ ] Green used only for primary actions/brand or genuinely positive states; red used only for genuinely negative/destructive states
+- [ ] `primary` used only for primary actions/brand/active state; `positive` only for genuinely positive states; `negative` only for genuinely negative or destructive actions
 - [ ] Motion, if any, is a fade/ease — no bounce
