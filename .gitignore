@@ -61,9 +61,19 @@ yarn-debug.log*
 yarn-error.log*
 
 # Firebase
-firebase-service-account.json
 firebase-debug.log
 ui-debug.log
+
+# Service-account credentials and private keys.
+# Globs rather than an exact filename: a renamed copy (e.g. sa.json,
+# custodr-service-account.json) must not become trackable by accident.
+*-service-account.json
+*serviceAccount*.json
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
 
 # Docker
 .docker/

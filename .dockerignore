@@ -1,0 +1,65 @@
+# Root .dockerignore
+#
+# Applies to builds whose context is the REPO ROOT — i.e. the API image
+# (apps/api-nest/Dockerfile and apps/api-nest/Dockerfile.dev).
+#
+# NOTE: the web image builds with `context: ./apps/web`. A subdirectory context
+# does NOT read this file, so apps/web/.dockerignore governs that build
+# independently.
+#
+# Rule order matters: the LAST matching pattern wins.
+#
+# Both a bare pattern and a `**/` form are listed for the security-critical
+# entries, because the nested `**/` form is what guarantees a file inside a
+# subdirectory (e.g. apps/api-nest/.env) is actually excluded.
+
+# --- Secrets: must never reach the build context -------------------------
+.env
+**/.env
+.env.*
+**/.env.*
+firebase-service-account.json
+**/firebase-service-account.json
+*-service-account.json
+**/*-service-account.json
+*serviceAccount*.json
+**/*serviceAccount*.json
+*.pem
+**/*.pem
+*.key
+**/*.key
+*.p12
+**/*.p12
+*.pfx
+**/*.pfx
+id_rsa*
+**/id_rsa*
+data/
+**/data/
+
+# --- VCS / editor / CI ---------------------------------------------------
+.git
+.gitignore
+.github
+.vscode
+.turbo
+
+# --- Dependencies and build output (regenerated inside the image) --------
+**/node_modules
+**/dist
+**/bin
+**/coverage
+**/.vite
+**/.vite-temp
+**/*.tsbuildinfo
+
+# --- Frozen Go backend ---------------------------------------------------
+# Archived per ADR 002; not part of any Node image. Excluding it also drops
+# its compiled bin/server and local data/ from the build context.
+apps/api-legacy
+
+# --- Local state ---------------------------------------------------------
+backups/
+tmp/
+temp/
+*.log

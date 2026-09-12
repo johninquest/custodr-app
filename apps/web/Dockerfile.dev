@@ -1,17 +1,27 @@
 # ============================================
 # Development Dockerfile for React Frontend
 # Uses Vite dev server with HMR
+#
+# NOTE: the build context is the REPO ROOT, not apps/web (see
+# docker-compose.dev.yml). apps/web is an npm workspace member, so its
+# dependency tree is resolved from the ROOT package-lock.json - there is no
+# lockfile inside apps/web, and `npm ci` fails without one.
 # ============================================
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* ./
-RUN npm ci
+# Root manifests first for layer caching. The root lockfile is mandatory.
+COPY package.json package-lock.json ./
+COPY apps/web/package.json ./apps/web/
 
-# Copy source code
-COPY . .
+# Install the web workspace's dependencies only.
+RUN npm ci --workspace=web --include-workspace-root
+
+# Copy the source (bind-mounted at runtime for HMR).
+COPY apps/web ./apps/web
+
+WORKDIR /app/apps/web
 
 # Expose Vite dev server port
 EXPOSE 5173

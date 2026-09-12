@@ -1,5 +1,18 @@
-# Development overrides - use with:
-# docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# Custodr - Local Development Stack (STANDALONE)
+#
+# This file is self-contained: it declares its own services, volume, and
+# network, so it can be started on its own while developing locally.
+#
+#   docker compose -f docker-compose.dev.yml up -d --build
+#
+# Production uses docker-compose.yml instead. The two files are intentionally
+# independent - they are NOT layered together, and are expected to diverge as
+# the production topology changes.
+#
+# Note on the project name: with no top-level `name:`, Compose derives it from
+# the directory (`custodr-app`). That keeps the existing
+# `custodr-app_postgres-data` volume, so local data survives this file becoming
+# standalone. Adding `name:` here would orphan that volume.
 
 services:
   # ============================================
@@ -13,10 +26,12 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-pguser}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pgpassword}
       - POSTGRES_DB=${POSTGRES_DB:-pgdb}
-    # Published so `drizzle-kit migrate` can target localhost:5432 without the
-    # `docker run --network` workaround. Remove (or leave unset) in production.
+    # Published to the host so `npm run db:migrate` (drizzle-kit) and any local
+    # client can reach it on localhost. Bound to the loopback address so it is
+    # not exposed on the network. This is the mapping that was missing when the
+    # stack was started from docker-compose.yml alone.
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       # PostgreSQL 18+ images expect a single mount at /var/lib/postgresql and
       # place data in a major-version subdirectory. Mounting .../data directly
@@ -32,18 +47,31 @@ services:
       start_period: 10s
 
   # ============================================
-  # NestJS Backend API (Development)
+  # NestJS Backend API
   # ============================================
   api:
     build:
       context: .
       dockerfile: apps/api-nest/Dockerfile.dev
+    container_name: custodr-app-api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${API_PORT:-8080}:8080"
     volumes:
+      # Bind-mount the source so `nest start --watch` reloads on change.
+      #
+      # The anonymous volume on node_modules is required, not cosmetic: without
+      # it the host's node_modules (installed on Windows, containing .cmd/.ps1
+      # shims and platform-specific binaries) would shadow the Linux tree built
+      # into the image. Docker copies the image's node_modules into the
+      # anonymous volume on first run, so the container keeps its own.
       - ./apps/api-nest:/app/apps/api-nest
+      - /app/apps/api-nest/node_modules
     environment:
       - NODE_ENV=development
       - PORT=8080
       - LOG_LEVEL=debug
+      # Service name `postgres` resolves on the shared Docker network.
       - DATABASE_URL=postgres://${POSTGRES_USER:-pguser}:${POSTGRES_PASSWORD:-pgpassword}@postgres:5432/${POSTGRES_DB:-pgdb}?sslmode=disable
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
@@ -53,20 +81,79 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - custodr-app-network
+    healthcheck:
+      # Node-based probe: the node:24-alpine image has no wget or curl. Node 24
+      # provides a global `fetch`.
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     # `nest start --watch` for hot reload (defined in Dockerfile.dev CMD)
 
   # ============================================
-  # React Frontend (Development)
+  # React Frontend (Vite dev server)
   # ============================================
   web:
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile.dev
+      # Repo root, not ./apps/web: apps/web is an npm workspace member and has no
+      # lockfile of its own, so `npm ci` needs the root package-lock.json.
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    container_name: custodr-app-web
+    restart: unless-stopped
+    # Vite serves on 5173 in development - not the 80/nginx port used in prod.
+    ports:
+      - "127.0.0.1:${WEB_PORT:-5173}:5173"
     volumes:
-      - ./apps/web/src:/app/src
-      - ./apps/web/public:/app/public
-      - ./apps/web/index.html:/app/index.html
+      - ./apps/web/src:/app/apps/web/src
+      - ./apps/web/public:/app/apps/web/public
+      - ./apps/web/index.html:/app/apps/web/index.html
+      # Preserve the image's Linux node_modules (see the api service for why).
+      - /app/apps/web/node_modules
+      - /app/node_modules
     environment:
-      - VITE_API_BASE_URL=/api/v1
-    # Vite dev server with HMR
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api/v1}
+      # Firebase web config. These are BUILD/RUNTIME values for Vite and are
+      # public by design (they ship inside the JS bundle). They are passed
+      # explicitly because the root .dockerignore excludes apps/web/.env, so the
+      # container cannot read that file. Compose substitutes them from the root
+      # .env (or the surrounding shell); unset values become empty strings.
+      - VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY:-}
+      - VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN:-}
+      - VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID:-}
+      - VITE_FIREBASE_STORAGE_BUCKET=${VITE_FIREBASE_STORAGE_BUCKET:-}
+      - VITE_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID:-}
+      - VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID:-}
+    networks:
+      - custodr-app-network
+    healthcheck:
+      # Node-based probe: node:20-alpine has no wget or curl.
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:5173/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+volumes:
+  postgres-data:
+    driver: local
+
+networks:
+  custodr-app-network:
+    driver: bridge
